@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>സംഭാവന കണക്ക്</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#23211d; --ink-soft:#6f6a5f;
+    --paper:#f6f2e9; --paper-deep:#efe8d8; --card:#fffdf8; --line:#e2d9c2;
+    --brand:#1f5c4c; --brand-deep:#153f34; --brand-tint:#e4efe9;
+    --gold:#c1932f; --gold-tint:#faf1dd;
+    --plum:#7a4a6e; --plum-tint:#f2e7ef;
+    --ok:#2e7d4f; --ok-tint:#e6f3ea;
+    --warn:#b4772a; --warn-tint:#fbeedd;
+    --bad:#a8402a; --bad-tint:#f8e7e1;
+    --radius:14px; --shadow:0 2px 10px rgba(35,33,29,.06), 0 1px 2px rgba(35,33,29,.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Noto Sans Malayalam','DM Sans',sans-serif; background:var(--paper); color:var(--ink); min-height:100vh; -webkit-font-smoothing:antialiased;}
+  .num{font-family:'DM Sans','Noto Sans Malayalam',sans-serif; font-variant-numeric:tabular-nums;}
+  button,input,select{font-family:inherit;}
+  .hidden{display:none !important;}
+  .center-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .muted{color:var(--ink-soft);}
+  .badge{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12.5px; font-weight:600;}
+  .badge.paid{background:var(--ok-tint); color:var(--ok);}
+  .badge.partial{background:var(--warn-tint); color:var(--warn);}
+  .badge.due{background:var(--bad-tint); color:var(--bad);}
+
+  .perf-top{height:14px; background-image:radial-gradient(circle 5px, var(--paper) 5px, transparent 5.5px); background-size:22px 22px; background-position:8px -8px; background-color:var(--brand); border-radius:14px 14px 0 0;}
+
+  .login-card{width:100%; max-width:380px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
+  .login-body{padding:34px 30px 30px;}
+  .seal{width:56px; height:56px; border-radius:50%; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px; margin:0 auto 16px; box-shadow:0 0 0 4px var(--brand-tint); font-family:'DM Sans',sans-serif;}
+  .login-title{text-align:center; font-size:19px; font-weight:700; margin:0 0 2px;}
+  .login-sub{text-align:center; font-size:13.5px; color:var(--ink-soft); margin:0 0 26px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-size:13px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+  .field input, .field select{width:100%; padding:11px 13px; border-radius:10px; border:1.5px solid var(--line); background:var(--paper); font-size:15px; color:var(--ink); outline:none; transition:border-color .15s;}
+  .field input:focus, .field select:focus{border-color:var(--brand);}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; border:none; border-radius:10px; padding:11px 18px; font-size:14.5px; font-weight:700; cursor:pointer; transition:transform .08s, box-shadow .15s, opacity .15s;}
+  .btn:active{transform:scale(.98);}
+  .btn-brand{background:var(--brand); color:#fff;}
+  .btn-brand:hover{background:var(--brand-deep);}
+  .btn-gold{background:var(--gold); color:#fff;}
+  .btn-plum{background:var(--plum); color:#fff;}
+  .btn-ghost{background:transparent; color:var(--brand); border:1.5px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--brand);}
+  .btn-danger{background:var(--bad); color:#fff;}
+  .btn-block{width:100%;}
+  .btn[disabled]{opacity:.55; cursor:not-allowed;}
+  .login-error{background:var(--bad-tint); color:var(--bad); border-radius:8px; padding:9px 12px; font-size:13px; margin-bottom:14px; display:none; font-weight:600;}
+  .login-role-toggle{display:flex; background:var(--paper); border-radius:10px; padding:4px; margin-bottom:22px; border:1px solid var(--line);}
+  .login-role-toggle button{flex:1; border:none; background:transparent; padding:9px 0; border-radius:7px; font-size:13.5px; font-weight:700; color:var(--ink-soft); cursor:pointer;}
+  .login-role-toggle button.active{background:var(--brand); color:#fff;}
+  .setup-hint{font-size:11.5px; color:var(--ink-soft); text-align:center; margin-top:16px; line-height:1.5;}
+
+  .app{display:flex; min-height:100vh;}
+  .sidebar{width:230px; background:var(--brand-deep); color:#fff; flex-shrink:0; display:flex; flex-direction:column; padding:22px 16px;}
+  .sidebar .org{display:flex; align-items:center; gap:10px; padding:0 4px 22px; border-bottom:1px solid rgba(255,255,255,.14); margin-bottom:18px;}
+  .sidebar .org .seal{width:38px; height:38px; font-size:14px; box-shadow:none; background:var(--gold);}
+  .sidebar .org b{font-size:15px; line-height:1.25; display:block;}
+  .sidebar .org span{font-size:11.5px; opacity:.7;}
+  .nav-item{display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:9px; color:rgba(255,255,255,.78); font-size:14px; font-weight:600; cursor:pointer; margin-bottom:4px; border:none; background:transparent; width:100%; text-align:right; font-family:inherit;}
+  .nav-item .ic{width:18px; text-align:center;}
+  .nav-item:hover{background:rgba(255,255,255,.08); color:#fff;}
+  .nav-item.active{background:var(--gold); color:#fff;}
+  .sidebar-foot{margin-top:auto; padding-top:14px; border-top:1px solid rgba(255,255,255,.14);}
+  .sidebar-foot .who{font-size:12.5px; opacity:.75; margin-bottom:10px;}
+
+  .main{flex:1; min-width:0; padding:26px 30px 60px;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px;}
+  .topbar h1{font-size:21px; margin:0;}
+  .topbar .sub{font-size:13px; color:var(--ink-soft); margin-top:2px;}
+
+  .stat-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:22px;}
+  .stat-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 18px 16px; box-shadow:var(--shadow);}
+  .stat-card .lbl{font-size:12.5px; color:var(--ink-soft); font-weight:600; margin-bottom:8px;}
+  .stat-card .val{font-size:25px; font-weight:800; font-family:'DM Sans',sans-serif;}
+  .stat-card.brand .val{color:var(--brand);}
+  .stat-card.gold .val{color:var(--gold);}
+  .stat-card.ok .val{color:var(--ok);}
+  .stat-card.bad .val{color:var(--bad);}
+  .stat-card.plum .val{color:var(--plum);}
+
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:20px; overflow:hidden;}
+  .panel.donation-panel{border-color:var(--plum); box-shadow:0 2px 10px rgba(122,74,110,.08);}
+  .panel-head{display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--line); gap:10px; flex-wrap:wrap;}
+  .panel-head h3{margin:0; font-size:15.5px;}
+  .panel-head .tag{font-size:11.5px; color:var(--plum); background:var(--plum-tint); padding:3px 9px; border-radius:999px; font-weight:700; margin-right:8px;}
+  .panel-body{padding:18px 20px;}
+
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th{text-align:right; padding:9px 10px; background:var(--paper-deep); color:var(--ink-soft); font-weight:700; font-size:12px; border-bottom:1px solid var(--line);}
+  td{padding:10px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:var(--paper);}
+  .txt-left{text-align:left;}
+
+  .search-box input{padding:8px 12px; border-radius:8px; border:1.5px solid var(--line); background:var(--paper); font-size:13.5px; min-width:200px; outline:none;}
+  .search-box input:focus{border-color:var(--brand);}
+
+  .modal-bg{position:fixed; inset:0; background:rgba(35,33,29,.45); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50;}
+  .modal{background:var(--card); border-radius:var(--radius); width:100%; max-width:460px; box-shadow:0 20px 50px rgba(0,0,0,.25); max-height:90vh; overflow:auto;}
+  .modal-head{padding:18px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;}
+  .modal-head h3{margin:0; font-size:16px;}
+  .modal-close{background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft); line-height:1;}
+  .modal-body{padding:20px 22px;}
+  .modal-foot{padding:16px 22px; border-top:1px solid var(--line); display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;}
+
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--brand-deep); color:#fff; padding:11px 22px; border-radius:10px; font-size:13.5px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.25); z-index:80; opacity:0; transition:opacity .25s, transform .25s; pointer-events:none;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+  .toast.err{background:var(--bad);}
+
+  .empty{text-align:center; padding:36px 10px; color:var(--ink-soft); font-size:13.5px;}
+
+  .month-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px;}
+  .month-chip{border:1px solid var(--line); border-radius:9px; padding:9px 10px; font-size:12.5px; background:var(--paper);}
+  .month-chip b{display:block; font-size:12.5px; margin-bottom:3px;}
+  .month-chip.paid{background:var(--ok-tint); border-color:transparent;}
+  .month-chip.partial{background:var(--warn-tint); border-color:transparent;}
+  .month-chip.due{background:var(--bad-tint); border-color:transparent;}
+
+  .month-check-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; max-height:220px; overflow:auto; border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--paper);}
+  .month-check{display:flex; align-items:center; gap:7px; font-size:12.5px; padding:6px 7px; border-radius:7px; background:var(--card); border:1px solid var(--line); cursor:pointer;}
+  .month-check.checked{border-color:var(--brand); background:var(--brand-tint);}
+  .month-check input{margin:0;}
+
+  .spinner{width:16px; height:16px; border-radius:50%; border:2.5px solid rgba(255,255,255,.4); border-top-color:#fff; animation:spin .7s linear infinite; display:inline-block;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .hamburger{display:none; background:var(--brand-deep); color:#fff; border:none; border-radius:8px; padding:8px 10px; font-size:16px; cursor:pointer;}
+
+  @media (max-width:820px){
+    .sidebar{position:fixed; z-index:60; height:100vh; transform:translateX(100%); transition:transform .2s; top:0; right:0;}
+    .sidebar.open{transform:translateX(0);}
+    .main{padding:18px 16px 50px;}
+    .hamburger{display:inline-flex;}
+    .row2{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="loginScreen" class="center-screen">
+  <div class="login-card">
+    <div class="perf-top"></div>
+    <div class="login-body">
+      <div class="seal" id="loginSeal">N</div>
+      <h2 class="login-title" id="orgTitle">NIMP</h2>
+      <p class="login-sub">സംഭാവന കണക്ക് പോർട്ടൽ</p>
+
+      <div class="login-role-toggle">
+        <button type="button" id="roleMemberBtn" class="active" onclick="setRole('member')">അംഗം</button>
+        <button type="button" id="roleAdminBtn" onclick="setRole('admin')">അഡ്മിൻ</button>
+      </div>
+
+      <div class="login-error" id="loginError"></div>
+      <div class="login-error" id="configError" style="display:none;"></div>
+
+      <div class="field">
+        <label id="loginIdLabel">മെമ്പർ ഐഡി / ഫോൺ നമ്പർ</label>
+        <input type="text" id="loginId" placeholder="ഉദാ: MEM-1234 അല്ലെങ്കിൽ 9876543210" autocomplete="username">
+      </div>
+      <div class="field">
+        <label id="loginSecretLabel">PIN</label>
+        <input type="password" id="loginSecret" placeholder="••••" autocomplete="current-password">
+      </div>
+
+      <button class="btn btn-brand btn-block" id="loginBtn" onclick="doLogin()">ലോഗിൻ ചെയ്യുക</button>
+      <p class="setup-hint">ഈ ആപ്പ് Google Sheet-മായി ബന്ധിപ്പിച്ചിരിക്കുന്നു. സെറ്റപ്പ് സംബന്ധിച്ച സഹായത്തിന് SETUP_README.md കാണുക.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MEMBER APP ============ -->
+<div id="memberApp" class="app hidden">
+  <div class="sidebar" id="memberSidebar">
+    <div class="org">
+      <div class="seal" id="memberSeal">N</div>
+      <div><b id="memberOrgName">NIMP</b><span>അംഗ പോർട്ടൽ</span></div>
+    </div>
+    <button class="nav-item active"><span class="ic">🏠</span> എന്റെ കണക്ക്</button>
+    <div class="sidebar-foot">
+      <div class="who">👤 <span id="memberWhoName"></span></div>
+      <button class="btn btn-ghost btn-block" style="color:#fff;border-color:rgba(255,255,255,.3);" onclick="doLogout()">ലോഗ് ഔട്ട്</button>
+    </div>
+  </div>
+  <div class="main">
+    <button class="hamburger" onclick="document.getElementById('memberSidebar').classList.toggle('open')">☰</button>
+    <div class="topbar">
+      <div>
+        <h1 id="memberGreeting">സ്വാഗതം</h1>
+        <div class="sub">നിങ്ങളുടെ വരിസംഖ്യയുടെ പൂർണ്ണ വിവരം</div>
+      </div>
+    </div>
+
+    <div class="stat-row" id="memberStats"></div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>മാസം തിരിച്ചുള്ള നില (<span id="memberTrackNote"></span> മുതൽ)</h3></div>
+      <div class="panel-body"><div class="month-grid" id="memberMonthGrid"></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>വരിസംഖ്യ അടച്ച ചരിത്രം</h3></div>
+      <div class="panel-body" style="padding:0;">
+        <table>
+          <thead><tr><th class="txt-left">തീയതി</th><th class="txt-left">തുക</th><th class="txt-left">ഏത് മാസത്തേത്</th><th class="txt-left">കുറിപ്പ്</th></tr></thead>
+          <tbody id="memberPaymentHistory"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel donation-panel">
+      <div class="panel-head"><h3><span class="tag">വരിസംഖ്യ അല്ല</span>സംഭാവനകൾ</h3></div>
+      <div class="panel-body">
+        <div class="stat-row" style="margin-bottom:14px;">
+          <div class="stat-card plum"><div class="lbl">ആകെ നൽകിയ സംഭാവന</div><div class="val num" id="memberDonationTotal">₹0</div></div>
+        </div>
+        <table>
+          <thead><tr><th class="txt-left">തീയതി</th><th class="txt-left">തുക</th><th class="txt-left">കുറിപ്പ്</th></tr></thead>
+          <tbody id="memberDonationHistory"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADMIN APP ============ -->
+<div id="adminApp" class="app hidden">
+  <div class="sidebar" id="adminSidebar">
+    <div class="org">
+      <div class="seal" id="adminSeal">N</div>
+      <div><b id="adminOrgName">NIMP</b><span>അഡ്മിൻ പാനൽ</span></div>
+    </div>
+    <button class="nav-item active" data-view="dashboard" onclick="showAdminView('dashboard')"><span class="ic">📊</span> ഡാഷ്ബോർഡ്</button>
+    <button class="nav-item" data-view="members" onclick="showAdminView('members')"><span class="ic">👥</span> അംഗങ്ങൾ</button>
+    <button class="nav-item" data-view="settings" onclick="showAdminView('settings')"><span class="ic">⚙️</span> ക്രമീകരണം</button>
+    <div class="sidebar-foot">
+      <div class="who">👤 <span id="adminWhoName"></span></div>
+      <button class="btn btn-ghost btn-block" style="color:#fff;border-color:rgba(255,255,255,.3);" onclick="doLogout()">ലോഗ് ഔട്ട്</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <button class="hamburger" onclick="document.getElementById('adminSidebar').classList.toggle('open')">☰</button>
+
+    <!-- DASHBOARD -->
+    <div id="adminView-dashboard">
+      <div class="topbar">
+        <div><h1>ഡാഷ്ബോർഡ്</h1><div class="sub">എല്ലാ അംഗങ്ങളുടെയും ചുരുക്കം</div></div>
+        <div class="search-box"><input type="text" id="dashSearch" placeholder="🔍 പേര് / ഐഡി തിരയുക..." oninput="renderMembersTable()"></div>
+      </div>
+      <div class="stat-row" id="adminStats"></div>
+      <div class="panel">
+        <div class="panel-head"><h3>അംഗങ്ങളുടെ പട്ടിക</h3><button class="btn btn-gold" onclick="openAddMemberModal()">+ പുതിയ അംഗം</button></div>
+        <div class="panel-body" style="padding:0; overflow-x:auto;">
+          <table>
+            <thead><tr><th class="txt-left">പേര്</th><th class="txt-left">ഫോൺ</th><th>പ്രതിമാസം</th><th>ആകെ അടച്ചത്</th><th>ബാലൻസ്</th><th>നില</th><th></th></tr></thead>
+            <tbody id="membersTableBody"></tbody>
+          </table>
+          <div id="membersEmpty" class="empty hidden">ഒരു അംഗവും ചേർത്തിട്ടില്ല. "+ പുതിയ അംഗം" ക്ലിക്ക് ചെയ്ത് തുടങ്ങുക.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEMBER DETAIL -->
+    <div id="adminView-memberDetail" class="hidden">
+      <div class="topbar">
+        <div>
+          <button class="btn btn-ghost" style="margin-bottom:10px;" onclick="showAdminView('members')">← തിരികെ</button>
+          <h1 id="detailName">-</h1>
+          <div class="sub" id="detailPhone">-</div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-ghost" onclick="openEditMemberModal()">വിവരങ്ങൾ എഡിറ്റ് ചെയ്യുക</button>
+          <button class="btn btn-plum" onclick="openAddDonationModal()">+ സംഭാവന ചേർക്കുക</button>
+          <button class="btn btn-brand" onclick="openAddPaymentModal()">+ വരിസംഖ്യ ചേർക്കുക</button>
+        </div>
+      </div>
+      <div class="stat-row" id="detailStats"></div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>മാസം തിരിച്ചുള്ള നില (<span id="detailTrackNote"></span> മുതൽ)</h3></div>
+        <div class="panel-body"><div class="month-grid" id="detailMonthGrid"></div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>വരിസംഖ്യ പേയ്‌മെന്റ് ചരിത്രം</h3></div>
+        <div class="panel-body" style="padding:0;">
+          <table>
+            <thead><tr><th class="txt-left">തീയതി</th><th class="txt-left">തുക</th><th class="txt-left">ഏത് മാസത്തേത്</th><th class="txt-left">കുറിപ്പ്</th><th></th></tr></thead>
+            <tbody id="detailPaymentHistory"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel donation-panel">
+        <div class="panel-head"><h3><span class="tag">വരിസംഖ്യ അല്ല</span>സംഭാവന ചരിത്രം</h3></div>
+        <div class="panel-body" style="padding:0;">
+          <table>
+            <thead><tr><th class="txt-left">തീയതി</th><th class="txt-left">തുക</th><th class="txt-left">കുറിപ്പ്</th><th></th></tr></thead>
+            <tbody id="detailDonationHistory"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEMBERS -->
+    <div id="adminView-members" class="hidden">
+      <div class="topbar">
+        <div><h1>അംഗങ്ങൾ</h1><div class="sub">എല്ലാ അംഗങ്ങളെയും കൈകാര്യം ചെയ്യുക</div></div>
+        <div style="display:flex; gap:10px;">
+          <div class="search-box"><input type="text" id="membersSearch" placeholder="🔍 പേര് / ഐഡി തിരയുക..." oninput="renderMembersTable()"></div>
+          <button class="btn btn-gold" onclick="openAddMemberModal()">+ പുതിയ അംഗം</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0; overflow-x:auto;">
+          <table>
+            <thead><tr><th class="txt-left">പേര്</th><th class="txt-left">ഫോൺ</th><th>പ്രതിമാസം</th><th>ആകെ അടച്ചത്</th><th>ബാലൻസ്</th><th>നില</th><th></th></tr></thead>
+            <tbody id="membersTableBody2"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="adminView-settings" class="hidden">
+      <div class="topbar"><div><h1>ക്രമീകരണം</h1><div class="sub">സംഘടനയുടെ പേരും കണക്ക് തുടങ്ങുന്ന മാസവും അഡ്മിൻ പാസ്‌വേഡും</div></div></div>
+      <div class="panel" style="max-width:480px;">
+        <div class="panel-body">
+          <div class="field"><label>സംഘടനയുടെ പേര്</label><input type="text" id="settingsOrgName"></div>
+          <div class="row2">
+            <div class="field"><label>കണക്ക് ട്രാക്ക് ചെയ്യാൻ തുടങ്ങുന്ന വർഷം</label><input type="number" id="settingsTrackYear"></div>
+            <div class="field"><label>കണക്ക് ട്രാക്ക് ചെയ്യാൻ തുടങ്ങുന്ന മാസം</label><select id="settingsTrackMonth"></select></div>
+          </div>
+          <p class="muted" style="font-size:12px; margin-top:-6px; margin-bottom:16px;">ഇതിന് മുൻപുള്ള ബാക്കി, ഓരോ അംഗത്തിന്റെയും "മുൻ ബാലൻസ്" ആയി പ്രത്യേകം നൽകുക.</p>
+          <div class="field"><label>പുതിയ അഡ്മിൻ പാസ്‌വേഡ് (മാറ്റണമെങ്കിൽ മാത്രം നൽകുക)</label><input type="password" id="settingsAdminPassword" placeholder="••••••"></div>
+          <button class="btn btn-brand" onclick="saveSettings()">സേവ് ചെയ്യുക</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div id="modalAddMember" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head"><h3>പുതിയ അംഗം ചേർക്കുക</h3><button class="modal-close" onclick="closeModal('modalAddMember')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>പേര് *</label><input type="text" id="amName"></div>
+      <div class="field"><label>ഫോൺ നമ്പർ</label><input type="text" id="amPhone"></div>
+      <div class="field"><label>പ്രതിമാസ വരിസംഖ്യ (₹) *</label><input type="number" id="amAmount"></div>
+      <div class="row2">
+        <div class="field"><label>ചേർന്ന വർഷം</label><input type="number" id="amYear"></div>
+        <div class="field"><label>ചേർന്ന മാസം</label><select id="amMonth"></select></div>
+      </div>
+      <div class="field"><label>മുൻ ബാലൻസ് (₹) — ഈ ആപ്പിന് മുൻപുള്ള ബാക്കി ഉണ്ടെങ്കിൽ</label><input type="number" id="amPrevBalance" placeholder="0"></div>
+      <div class="field"><label>PIN (ലോഗിന് വേണ്ടി)</label><input type="text" id="amPin" placeholder="ഡിഫോൾട്ട്: 1234"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modalAddMember')">റദ്ദാക്കുക</button>
+      <button class="btn btn-brand" id="amSubmitBtn" onclick="submitAddMember()">ചേർക്കുക</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalEditMember" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head"><h3>അംഗത്തിന്റെ വിവരങ്ങൾ എഡിറ്റ് ചെയ്യുക</h3><button class="modal-close" onclick="closeModal('modalEditMember')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>പേര്</label><input type="text" id="emName"></div>
+      <div class="field"><label>ഫോൺ നമ്പർ</label><input type="text" id="emPhone"></div>
+      <div class="field"><label>പ്രതിമാസ വരിസംഖ്യ (₹)</label><input type="number" id="emAmount"></div>
+      <div class="row2">
+        <div class="field"><label>ചേർന്ന വർഷം</label><input type="number" id="emYear"></div>
+        <div class="field"><label>ചേർന്ന മാസം</label><select id="emMonth"></select></div>
+      </div>
+      <div class="field"><label>മുൻ ബാലൻസ് (₹)</label><input type="number" id="emPrevBalance"></div>
+      <div class="field"><label>PIN മാറ്റുക (വേണമെങ്കിൽ മാത്രം)</label><input type="text" id="emPin" placeholder="നിലവിലുള്ളത് സൂക്ഷിക്കാൻ ശൂന്യമായി വിടുക"></div>
+      <div class="field"><label>നില</label><select id="emActive"><option value="true">സജീവം (Active)</option><option value="false">നിർജ്ജീവം (Inactive)</option></select></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modalEditMember')">റദ്ദാക്കുക</button>
+      <button class="btn btn-brand" id="emSubmitBtn" onclick="submitEditMember()">സേവ് ചെയ്യുക</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalAddPayment" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head"><h3>വരിസംഖ്യ പേയ്‌മെന്റ് ചേർക്കുക</h3><button class="modal-close" onclick="closeModal('modalAddPayment')">✕</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>ഏത് മാസത്തേത് ആണ്? (ഒന്നോ അതിലധികമോ തിരഞ്ഞെടുക്കാം) *</label>
+        <div class="month-check-grid" id="apMonthGrid"></div>
+      </div>
+      <div class="field"><label>ആകെ തുക (₹) *</label><input type="number" id="apAmount"></div>
+      <div class="field"><label>തീയതി</label><input type="date" id="apDate"></div>
+      <div class="field"><label>കുറിപ്പ് (ഓപ്ഷണൽ)</label><input type="text" id="apNote" placeholder="ഉദാ: ക്യാഷ് / GPay"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modalAddPayment')">റദ്ദാക്കുക</button>
+      <button class="btn btn-brand" id="apSubmitBtn" onclick="submitAddPayment()">ചേർക്കുക</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalAddDonation" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head"><h3>സംഭാവന ചേർക്കുക <span class="badge partial">വരിസംഖ്യ അല്ല</span></h3><button class="modal-close" onclick="closeModal('modalAddDonation')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>തുക (₹) *</label><input type="number" id="adAmount"></div>
+      <div class="field"><label>തീയതി</label><input type="date" id="adDate"></div>
+      <div class="field"><label>കുറിപ്പ് (ഏത് ആവശ്യത്തിന് എന്ന്)</label><input type="text" id="adNote" placeholder="ഉദാ: പള്ളി നിർമ്മാണ ഫണ്ട്"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modalAddDonation')">റദ്ദാക്കുക</button>
+      <button class="btn btn-plum" id="adSubmitBtn" onclick="submitAddDonation()">ചേർക്കുക</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // =================================================================
+  // CONFIG — GitHub Pages പോലുള്ള ഒരു സ്റ്റാറ്റിക് സൈറ്റിൽ ഹോസ്റ്റ്
+  // ചെയ്യുകയാണെങ്കിൽ, താഴെയുള്ള URL നിങ്ങളുടെ Apps Script
+  // "Deploy > Web app" വഴി കിട്ടിയ URL ആയി മാറ്റുക.
+  // Apps Script-ൽ നിന്ന് നേരിട്ട് തുറക്കുകയാണെങ്കിൽ ഇത് മാറ്റേണ്ട,
+  // താഴെയുള്ള കോഡ് സ്വയമേവ കണ്ടെത്തിക്കൊള്ളും.
+  // =================================================================
+  const CONFIGURED_APP_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+  function apiBase(){
+    if (CONFIGURED_APP_URL && CONFIGURED_APP_URL.indexOf('PASTE_') !== 0) return CONFIGURED_APP_URL;
+    return window.location.href.split('?')[0];
+  }
+
+  function callApi(action, payload){
+    const url = apiBase() + '?action=' + encodeURIComponent(action) + '&payload=' + encodeURIComponent(JSON.stringify(payload || {}));
+    return fetch(url).then(function(r){ return r.json(); }).then(function(res){
+      if (!res.ok) throw new Error(res.error || 'എന്തോ പിശക് സംഭവിച്ചു.');
+      return res.data;
+    });
+  }
+
+  let SESSION = null;
+  let ORG = { orgName: 'NIMP' };
+  let ADMIN_MEMBERS_CACHE = [];
+  let CURRENT_DETAIL_ID = null;
+  let CURRENT_DETAIL_DATA = null;
+
+  const MONTHS_ML = ['ജനുവരി','ഫെബ്രുവരി','മാർച്ച്','ഏപ്രിൽ','മെയ്','ജൂൺ','ജൂലൈ','ഓഗസ്റ്റ്','സെപ്റ്റംബർ','ഒക്ടോബർ','നവംബർ','ഡിസംബർ'];
+
+  function fmtMoney(n){ n = Number(n)||0; return '₹' + n.toLocaleString('en-IN', {maximumFractionDigits:0}); }
+  function fmtDate(d){ if(!d) return '-'; const dt = new Date(d); if (isNaN(dt)) return String(d); return dt.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}); }
+  function fmtMonthsList(csv){
+    if (!csv) return '-';
+    return csv.split(',').filter(Boolean).map(function(k){
+      const parts = k.split('-'); const y = parts[0], m = parseInt(parts[1],10);
+      return MONTHS_ML[m-1] + ' ' + y;
+    }).join(', ');
+  }
+  function toast(msg, isErr){
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show' + (isErr ? ' err' : '');
+    setTimeout(function(){ t.classList.remove('show'); }, 3200);
+  }
+  function showEl(id){ document.getElementById(id).classList.remove('hidden'); }
+  function hideEl(id){ document.getElementById(id).classList.add('hidden'); }
+  function closeModal(id){ hideEl(id); }
+  function initials(name){ return (name||'N').trim().charAt(0).toUpperCase(); }
+  function statusLabel(s){ return s==='paid' ? 'അടച്ചു' : s==='partial' ? 'ഭാഗികം' : s==='due' ? 'ബാക്കി' : '-'; }
+
+  function populateMonthSelect(sel){
+    sel.innerHTML = '';
+    MONTHS_ML.forEach(function(m, i){
+      const o = document.createElement('option'); o.value = i+1; o.textContent = m; sel.appendChild(o);
+    });
+  }
+
+  window.addEventListener('DOMContentLoaded', function(){
+    populateMonthSelect(document.getElementById('amMonth'));
+    populateMonthSelect(document.getElementById('emMonth'));
+    populateMonthSelect(document.getElementById('settingsTrackMonth'));
+    document.getElementById('apDate').valueAsDate = new Date();
+    document.getElementById('adDate').valueAsDate = new Date();
+
+    callApi('getOrgInfo', {}).then(function(info){
+      ORG = info; applyOrgBranding();
+    }).catch(function(err){
+      document.getElementById('configError').style.display = 'block';
+      document.getElementById('configError').textContent =
+        'സെർവറുമായി ബന്ധപ്പെടാൻ കഴിഞ്ഞില്ല. index.html-ലെ CONFIGURED_APP_URL ശരിയായി സെറ്റ് ചെയ്തിട്ടുണ്ടോ എന്ന് പരിശോധിക്കുക. (' + err.message + ')';
+    });
+
+    document.getElementById('loginId').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+    document.getElementById('loginSecret').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  });
+
+  function applyOrgBranding(){
+    document.getElementById('orgTitle').textContent = ORG.orgName;
+    document.getElementById('loginSeal').textContent = initials(ORG.orgName);
+    document.title = ORG.orgName + ' - സംഭാവന കണക്ക്';
+    ['memberOrgName','adminOrgName'].forEach(function(id){ const el = document.getElementById(id); if(el) el.textContent = ORG.orgName; });
+    ['memberSeal','adminSeal'].forEach(function(id){ const el = document.getElementById(id); if(el) el.textContent = initials(ORG.orgName); });
+  }
+
+  function setRole(role){
+    document.getElementById('roleMemberBtn').classList.toggle('active', role==='member');
+    document.getElementById('roleAdminBtn').classList.toggle('active', role==='admin');
+    document.getElementById('loginIdLabel').textContent = role==='member' ? 'മെമ്പർ ഐഡി / ഫോൺ നമ്പർ' : 'അഡ്മിൻ യൂസർനെയിം';
+    document.getElementById('loginSecretLabel').textContent = role==='member' ? 'PIN' : 'പാസ്‌വേഡ്';
+    document.getElementById('loginId').value = ''; document.getElementById('loginSecret').value = '';
+    hideEl('loginError');
+  }
+
+  // ---------------- AUTH ----------------
+  function doLogin(){
+    const id = document.getElementById('loginId').value.trim();
+    const secret = document.getElementById('loginSecret').value.trim();
+    const errBox = document.getElementById('loginError');
+    hideEl('loginError');
+    if (!id || !secret){ errBox.textContent = 'എല്ലാ വിവരങ്ങളും നൽകുക.'; showEl('loginError'); return; }
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> ലോഗിൻ ചെയ്യുന്നു...';
+
+    callApi('login', { loginId: id, secret: secret }).then(function(res){
+      btn.disabled = false; btn.textContent = 'ലോഗിൻ ചെയ്യുക';
+      SESSION = res;
+      hideEl('loginScreen');
+      if (res.role === 'admin'){
+        document.getElementById('adminWhoName').textContent = res.name;
+        showEl('adminApp'); loadAdminDashboard();
+      } else {
+        document.getElementById('memberWhoName').textContent = res.name;
+        document.getElementById('memberGreeting').textContent = 'സ്വാഗതം, ' + res.name;
+        showEl('memberApp'); loadMemberData();
+      }
+    }).catch(function(err){
+      btn.disabled = false; btn.textContent = 'ലോഗിൻ ചെയ്യുക';
+      errBox.textContent = err.message || 'ലോഗിൻ പരാജയപ്പെട്ടു.'; showEl('loginError');
+    });
+  }
+
+  function doLogout(){
+    if (SESSION) callApi('logout', { token: SESSION.token }).catch(function(){});
+    SESSION = null;
+    hideEl('memberApp'); hideEl('adminApp');
+    document.getElementById('loginId').value=''; document.getElementById('loginSecret').value='';
+    showEl('loginScreen');
+  }
+
+  // ---------------- MEMBER VIEW ----------------
+  function loadMemberData(){
+    callApi('getMyData', { token: SESSION.token }).then(renderMemberData).catch(function(err){ toast(err.message, true); });
+  }
+
+  function renderMemberData(d){
+    document.getElementById('memberTrackNote').textContent = MONTHS_ML[d.trackingStartMonth-1] + ' ' + d.trackingStartYear;
+    const statsHtml =
+      '<div class="stat-card brand"><div class="lbl">പ്രതിമാസ വരിസംഖ്യ</div><div class="val num">'+fmtMoney(d.monthlyAmount)+'</div></div>' +
+      '<div class="stat-card ok"><div class="lbl">ആകെ അടച്ചത്</div><div class="val num">'+fmtMoney(d.totalPaid)+'</div></div>' +
+      '<div class="stat-card '+(d.balance>0?'bad':'ok')+'"><div class="lbl">നിലവിലെ ബാലൻസ്</div><div class="val num">'+fmtMoney(Math.max(d.balance,0))+'</div></div>' +
+      '<div class="stat-card gold"><div class="lbl">അടച്ച മാസങ്ങൾ</div><div class="val num">'+d.monthsFullyPaid+' / '+d.monthsElapsed+'</div></div>' +
+      (d.previousBalance ? '<div class="stat-card plum"><div class="lbl">മുൻ ബാലൻസ് ('+MONTHS_ML[d.trackingStartMonth-1]+' '+d.trackingStartYear+'-ന് മുൻപ്)</div><div class="val num">'+fmtMoney(d.previousBalance)+'</div></div>' : '');
+    document.getElementById('memberStats').innerHTML = statsHtml;
+
+    document.getElementById('memberMonthGrid').innerHTML = d.monthlyStatus.slice().reverse().map(function(ms){
+      return '<div class="month-chip '+ms.status+'"><b>'+ms.monthName+' '+ms.year+'</b><span>'+statusLabel(ms.status)+' · '+fmtMoney(ms.paid)+'/'+fmtMoney(ms.expected)+'</span></div>';
+    }).join('') || '<div class="empty">വിവരമില്ല</div>';
+
+    document.getElementById('memberPaymentHistory').innerHTML = (d.paymentHistory||[]).map(function(p){
+      return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+fmtMonthsList(p.coveredMonths)+'</td><td class="txt-left">'+(p.note||'-')+'</td></tr>';
+    }).join('') || '<tr><td colspan="4" class="empty">ഇതുവരെ വരിസംഖ്യ പേയ്‌മെന്റുകൾ ഒന്നും ഇല്ല</td></tr>';
+
+    document.getElementById('memberDonationTotal').textContent = fmtMoney(d.totalDonations);
+    document.getElementById('memberDonationHistory').innerHTML = (d.donationHistory||[]).map(function(p){
+      return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+(p.note||'-')+'</td></tr>';
+    }).join('') || '<tr><td colspan="3" class="empty">ഇതുവരെ സംഭാവനകൾ ഒന്നും ഇല്ല</td></tr>';
+  }
+
+  // ---------------- ADMIN: DASHBOARD ----------------
+  function loadAdminDashboard(){
+    callApi('getAllMembersSummary', { token: SESSION.token }).then(function(list){
+      ADMIN_MEMBERS_CACHE = list;
+      renderAdminStats(list);
+      renderMembersTable();
+    }).catch(function(err){ toast(err.message, true); });
+  }
+
+  function renderAdminStats(list){
+    const totalExpected = list.reduce(function(s,m){return s+m.totalExpected+m.previousBalance;},0);
+    const totalPaid = list.reduce(function(s,m){return s+m.totalPaid;},0);
+    const totalBalance = totalExpected - totalPaid;
+    const totalDonations = list.reduce(function(s,m){return s+m.totalDonations;},0);
+    document.getElementById('adminStats').innerHTML =
+      '<div class="stat-card brand"><div class="lbl">ആകെ അംഗങ്ങൾ</div><div class="val num">'+list.length+'</div></div>' +
+      '<div class="stat-card gold"><div class="lbl">പ്രതീക്ഷിച്ച ആകെ തുക (മുൻ ബാലൻസ് ഉൾപ്പെടെ)</div><div class="val num">'+fmtMoney(totalExpected)+'</div></div>' +
+      '<div class="stat-card ok"><div class="lbl">ആകെ പിരിഞ്ഞു കിട്ടിയ വരിസംഖ്യ</div><div class="val num">'+fmtMoney(totalPaid)+'</div></div>' +
+      '<div class="stat-card bad"><div class="lbl">ആകെ ബാക്കി</div><div class="val num">'+fmtMoney(Math.max(totalBalance,0))+'</div></div>' +
+      '<div class="stat-card plum"><div class="lbl">ആകെ സംഭാവന (വരിസംഖ്യ അല്ല)</div><div class="val num">'+fmtMoney(totalDonations)+'</div></div>';
+  }
+
+  function renderMembersTable(){
+    const q1 = (document.getElementById('dashSearch') ? document.getElementById('dashSearch').value : '').toLowerCase();
+    const q2 = (document.getElementById('membersSearch') ? document.getElementById('membersSearch').value : '').toLowerCase();
+    const q = q1 || q2;
+    const filtered = ADMIN_MEMBERS_CACHE.filter(function(m){
+      return !q || m.name.toLowerCase().indexOf(q)>=0 || String(m.memberId).toLowerCase().indexOf(q)>=0 || String(m.phone).indexOf(q)>=0;
+    });
+    const rowsHtml = filtered.map(function(m){
+      const totalBal = Math.max(m.balance,0);
+      return '<tr style="cursor:pointer" onclick="openMemberDetail(\''+m.memberId+'\')">' +
+        '<td class="txt-left"><b>'+m.name+'</b><br><span class="muted" style="font-size:11.5px;">'+m.memberId+'</span></td>' +
+        '<td class="txt-left">'+(m.phone||'-')+'</td>' +
+        '<td class="num">'+fmtMoney(m.monthlyAmount)+'</td>' +
+        '<td class="num">'+fmtMoney(m.totalPaid)+'</td>' +
+        '<td class="num" style="color:'+(m.balance>0?'var(--bad)':'var(--ok)')+'">'+fmtMoney(totalBal)+'</td>' +
+        '<td><span class="badge '+(m.active?'paid':'due')+'">'+(m.active?'സജീവം':'നിർജ്ജീവം')+'</span></td>' +
+        '<td style="text-align:left;">➜</td></tr>';
+    }).join('');
+    document.getElementById('membersTableBody').innerHTML = rowsHtml;
+    document.getElementById('membersTableBody2').innerHTML = rowsHtml;
+    document.getElementById('membersEmpty').classList.toggle('hidden', filtered.length !== 0);
+  }
+
+  function showAdminView(view){
+    ['dashboard','memberDetail','members','settings'].forEach(function(v){
+      document.getElementById('adminView-'+v).classList.toggle('hidden', v!==view);
+    });
+    document.querySelectorAll('.nav-item[data-view]').forEach(function(el){
+      el.classList.toggle('active', el.dataset.view === view);
+    });
+    document.getElementById('adminSidebar').classList.remove('open');
+    if (view === 'settings'){
+      document.getElementById('settingsOrgName').value = ORG.orgName;
+      document.getElementById('settingsTrackYear').value = ORG.trackingStartYear;
+      document.getElementById('settingsTrackMonth').value = ORG.trackingStartMonth;
+    }
+  }
+
+  // ---------------- ADMIN: MEMBER DETAIL ----------------
+  function openMemberDetail(memberId){
+    CURRENT_DETAIL_ID = memberId;
+    showAdminView('memberDetail');
+    document.getElementById('detailName').textContent = 'ലോഡ് ചെയ്യുന്നു...';
+    callApi('getMemberDetail', { token: SESSION.token, memberId: memberId }).then(renderMemberDetail).catch(function(err){ toast(err.message, true); });
+  }
+
+  function renderMemberDetail(d){
+    CURRENT_DETAIL_DATA = d;
+    document.getElementById('detailName').textContent = d.name;
+    document.getElementById('detailPhone').textContent = (d.phone||'-') + '  ·  ' + d.memberId;
+    document.getElementById('detailTrackNote').textContent = MONTHS_ML[d.trackingStartMonth-1] + ' ' + d.trackingStartYear;
+
+    document.getElementById('detailStats').innerHTML =
+      '<div class="stat-card brand"><div class="lbl">പ്രതിമാസ വരിസംഖ്യ</div><div class="val num">'+fmtMoney(d.monthlyAmount)+'</div></div>' +
+      '<div class="stat-card ok"><div class="lbl">ആകെ അടച്ചത്</div><div class="val num">'+fmtMoney(d.totalPaid)+'</div></div>' +
+      '<div class="stat-card '+(d.balance>0?'bad':'ok')+'"><div class="lbl">ബാലൻസ്</div><div class="val num">'+fmtMoney(Math.max(d.balance,0))+'</div></div>' +
+      '<div class="stat-card gold"><div class="lbl">അടച്ച മാസങ്ങൾ</div><div class="val num">'+d.monthsFullyPaid+' / '+d.monthsElapsed+'</div></div>' +
+      '<div class="stat-card plum"><div class="lbl">മുൻ ബാലൻസ്</div><div class="val num">'+fmtMoney(d.previousBalance)+'</div></div>';
+
+    document.getElementById('detailMonthGrid').innerHTML = d.monthlyStatus.slice().reverse().map(function(ms){
+      return '<div class="month-chip '+ms.status+'"><b>'+ms.monthName+' '+ms.year+'</b><span>'+statusLabel(ms.status)+' · '+fmtMoney(ms.paid)+'/'+fmtMoney(ms.expected)+'</span></div>';
+    }).join('') || '<div class="empty">വിവരമില്ല</div>';
+
+    document.getElementById('detailPaymentHistory').innerHTML = (d.paymentHistory||[]).map(function(p){
+      return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+fmtMonthsList(p.coveredMonths)+'</td><td class="txt-left">'+(p.note||'-')+'</td>' +
+        '<td style="text-align:left;"><button class="btn btn-ghost" style="padding:5px 10px; font-size:12px; color:var(--bad); border-color:var(--bad-tint);" onclick="removePayment(\''+p.id+'\')">നീക്കം ചെയ്യുക</button></td></tr>';
+    }).join('') || '<tr><td colspan="5" class="empty">ഇതുവരെ പേയ്‌മെന്റുകൾ ഒന്നും ഇല്ല</td></tr>';
+
+    document.getElementById('detailDonationHistory').innerHTML = (d.donationHistory||[]).map(function(p){
+      return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+(p.note||'-')+'</td>' +
+        '<td style="text-align:left;"><button class="btn btn-ghost" style="padding:5px 10px; font-size:12px; color:var(--bad); border-color:var(--bad-tint);" onclick="removeDonation(\''+p.id+'\')">നീക്കം ചെയ്യുക</button></td></tr>';
+    }).join('') || '<tr><td colspan="4" class="empty">ഇതുവരെ സംഭാവനകൾ ഒന്നും ഇല്ല</td></tr>';
+  }
+
+  function removePayment(paymentId){
+    if (!confirm('ഈ പേയ്‌മെന്റ് നീക്കം ചെയ്യണോ?')) return;
+    callApi('deletePayment', { token: SESSION.token, paymentId: paymentId }).then(function(){
+      toast('നീക്കം ചെയ്തു.'); openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
+    }).catch(function(err){ toast(err.message, true); });
+  }
+  function removeDonation(donationId){
+    if (!confirm('ഈ സംഭാവന നീക്കം ചെയ്യണോ?')) return;
+    callApi('deleteDonation', { token: SESSION.token, donationId: donationId }).then(function(){
+      toast('നീക്കം ചെയ്തു.'); openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
+    }).catch(function(err){ toast(err.message, true); });
+  }
+
+  // ---------------- ADMIN: ADD MEMBER ----------------
+  function openAddMemberModal(){
+    document.getElementById('amName').value='';
+    document.getElementById('amPhone').value='';
+    document.getElementById('amAmount').value='';
+    document.getElementById('amYear').value=new Date().getFullYear();
+    document.getElementById('amMonth').value=new Date().getMonth()+1;
+    document.getElementById('amPrevBalance').value='';
+    document.getElementById('amPin').value='';
+    showEl('modalAddMember');
+  }
+  function submitAddMember(){
+    const data = {
+      name: document.getElementById('amName').value.trim(),
+      phone: document.getElementById('amPhone').value.trim(),
+      monthlyAmount: document.getElementById('amAmount').value,
+      joinYear: document.getElementById('amYear').value,
+      joinMonth: document.getElementById('amMonth').value,
+      previousBalance: document.getElementById('amPrevBalance').value || 0,
+      pin: document.getElementById('amPin').value.trim()
+    };
+    if (!data.name || !data.monthlyAmount){ toast('പേരും തുകയും നിർബന്ധമാണ്.', true); return; }
+    const btn = document.getElementById('amSubmitBtn'); btn.disabled = true;
+    callApi('addMember', { token: SESSION.token, data: data }).then(function(){
+      btn.disabled=false; closeModal('modalAddMember'); toast('അംഗത്തെ ചേർത്തു.'); loadAdminDashboard();
+    }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
+  }
+
+  // ---------------- ADMIN: EDIT MEMBER ----------------
+  function openEditMemberModal(){
+    const d = CURRENT_DETAIL_DATA; if (!d) return;
+    document.getElementById('emName').value = d.name;
+    document.getElementById('emPhone').value = d.phone;
+    document.getElementById('emAmount').value = d.monthlyAmount;
+    document.getElementById('emYear').value = d.joinYear;
+    document.getElementById('emMonth').value = d.joinMonth;
+    document.getElementById('emPrevBalance').value = d.previousBalance;
+    document.getElementById('emPin').value = '';
+    document.getElementById('emActive').value = d.active ? 'true' : 'false';
+    showEl('modalEditMember');
+  }
+  function submitEditMember(){
+    const data = {
+      name: document.getElementById('emName').value.trim(),
+      phone: document.getElementById('emPhone').value.trim(),
+      monthlyAmount: document.getElementById('emAmount').value,
+      joinYear: document.getElementById('emYear').value,
+      joinMonth: document.getElementById('emMonth').value,
+      previousBalance: document.getElementById('emPrevBalance').value || 0,
+      pin: document.getElementById('emPin').value.trim(),
+      active: document.getElementById('emActive').value === 'true'
+    };
+    const btn = document.getElementById('emSubmitBtn'); btn.disabled = true;
+    callApi('updateMember', { token: SESSION.token, memberId: CURRENT_DETAIL_ID, data: data }).then(function(){
+      btn.disabled=false; closeModal('modalEditMember'); toast('സേവ് ചെയ്തു.'); openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
+    }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
+  }
+
+  // ---------------- ADMIN: ADD PAYMENT (with month selection) ----------------
+  function openAddPaymentModal(){
+    const d = CURRENT_DETAIL_DATA;
+    document.getElementById('apAmount').value = '';
+    document.getElementById('apDate').valueAsDate = new Date();
+    document.getElementById('apNote').value = '';
+
+    const grid = document.getElementById('apMonthGrid');
+    grid.innerHTML = '';
+    if (d && d.monthlyStatus){
+      d.monthlyStatus.slice().reverse().forEach(function(ms){
+        const label = document.createElement('label');
+        label.className = 'month-check' + (ms.status==='due' ? ' checked' : '');
+        label.innerHTML = '<input type="checkbox" value="'+ms.key+'" data-amt="'+(ms.expected-ms.paid)+'" '+(ms.status==='due'?'checked':'')+' onchange="onPayMonthToggle(this)"> ' +
+          ms.monthName+' '+ms.year+' ('+statusLabel(ms.status)+')';
+        grid.appendChild(label);
+      });
+    }
+    recomputeSuggestedAmount();
+    showEl('modalAddPayment');
+  }
+  function onPayMonthToggle(cb){
+    cb.closest('.month-check').classList.toggle('checked', cb.checked);
+    recomputeSuggestedAmount();
+  }
+  function recomputeSuggestedAmount(){
+    const checked = document.querySelectorAll('#apMonthGrid input:checked');
+    let sum = 0;
+    checked.forEach(function(cb){ sum += Number(cb.dataset.amt) || 0; });
+    document.getElementById('apAmount').value = sum > 0 ? sum : '';
+  }
+  function submitAddPayment(){
+    const checked = Array.from(document.querySelectorAll('#apMonthGrid input:checked')).map(function(cb){ return cb.value; });
+    const amount = document.getElementById('apAmount').value;
+    const date = document.getElementById('apDate').value;
+    const note = document.getElementById('apNote').value.trim();
+    if (checked.length === 0){ toast('ഏത് മാസത്തേതാണ് എന്ന് തിരഞ്ഞെടുക്കുക.', true); return; }
+    if (!amount || Number(amount) <= 0){ toast('ശരിയായ തുക നൽകുക.', true); return; }
+    const btn = document.getElementById('apSubmitBtn'); btn.disabled = true;
+    callApi('addPayment', { token: SESSION.token, memberId: CURRENT_DETAIL_ID, amount: amount, date: date, note: note, coveredMonths: checked }).then(function(){
+      btn.disabled=false; closeModal('modalAddPayment'); toast('വരിസംഖ്യ ചേർത്തു.'); openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
+    }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
+  }
+
+  // ---------------- ADMIN: ADD DONATION ----------------
+  function openAddDonationModal(){
+    document.getElementById('adAmount').value = '';
+    document.getElementById('adDate').valueAsDate = new Date();
+    document.getElementById('adNote').value = '';
+    showEl('modalAddDonation');
+  }
+  function submitAddDonation(){
+    const amount = document.getElementById('adAmount').value;
+    const date = document.getElementById('adDate').value;
+    const note = document.getElementById('adNote').value.trim();
+    if (!amount || Number(amount) <= 0){ toast('ശരിയായ തുക നൽകുക.', true); return; }
+    const btn = document.getElementById('adSubmitBtn'); btn.disabled = true;
+    callApi('addDonation', { token: SESSION.token, memberId: CURRENT_DETAIL_ID, amount: amount, date: date, note: note }).then(function(){
+      btn.disabled=false; closeModal('modalAddDonation'); toast('സംഭാവന ചേർത്തു.'); openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
+    }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
+  }
+
+  // ---------------- ADMIN: SETTINGS ----------------
+  function saveSettings(){
+    const orgName = document.getElementById('settingsOrgName').value.trim();
+    const trackYear = document.getElementById('settingsTrackYear').value;
+    const trackMonth = document.getElementById('settingsTrackMonth').value;
+    const adminPassword = document.getElementById('settingsAdminPassword').value.trim();
+    if (!orgName){ toast('സംഘടനയുടെ പേര് നൽകുക.', true); return; }
+    callApi('updateOrgSettings', { token: SESSION.token, settings: { orgName: orgName, trackingStartYear: trackYear, trackingStartMonth: trackMonth, adminPassword: adminPassword } }).then(function(info){
+      ORG = info; applyOrgBranding();
+      document.getElementById('settingsAdminPassword').value = '';
+      toast('ക്രമീകരണം സേവ് ചെയ്തു.');
+    }).catch(function(err){ toast(err.message, true); });
+  }
+</script>
+</body>
+</html>
