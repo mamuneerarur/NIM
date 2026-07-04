@@ -30,6 +30,7 @@
   .badge.paid{background:var(--ok-tint); color:var(--ok);}
   .badge.partial{background:var(--warn-tint); color:var(--warn);}
   .badge.due{background:var(--bad-tint); color:var(--bad);}
+  .badge.super{background:var(--gold-tint); color:var(--gold);}
 
   .perf-top{height:14px; background-image:radial-gradient(circle 5px, var(--paper) 5px, transparent 5.5px); background-size:22px 22px; background-position:8px -8px; background-color:var(--brand); border-radius:14px 14px 0 0;}
 
@@ -51,6 +52,7 @@
   .btn-ghost{background:transparent; color:var(--brand); border:1.5px solid var(--line);}
   .btn-ghost:hover{border-color:var(--brand);}
   .btn-danger{background:var(--bad); color:#fff;}
+  .btn-sm{padding:6px 12px; font-size:12.5px;}
   .btn-block{width:100%;}
   .btn[disabled]{opacity:.55; cursor:not-allowed;}
   .login-error{background:var(--bad-tint); color:var(--bad); border-radius:8px; padding:9px 12px; font-size:13px; margin-bottom:14px; display:none; font-weight:600;}
@@ -69,8 +71,10 @@
   .nav-item .ic{width:18px; text-align:center;}
   .nav-item:hover{background:rgba(255,255,255,.08); color:#fff;}
   .nav-item.active{background:var(--gold); color:#fff;}
-  .sidebar-foot{margin-top:auto; padding-top:14px; border-top:1px solid rgba(255,255,255,.14);}
-  .sidebar-foot .who{font-size:12.5px; opacity:.75; margin-bottom:10px;}
+  .sidebar-foot{margin-top:auto; padding-top:14px; border-top:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; gap:8px;}
+  .sidebar-foot .who{font-size:12.5px; opacity:.75; margin-bottom:4px;}
+  .link-btn{background:none; border:none; color:rgba(255,255,255,.7); font-size:12.5px; text-decoration:underline; cursor:pointer; padding:2px 0; text-align:right; font-family:inherit;}
+  .link-btn:hover{color:#fff;}
 
   .main{flex:1; min-width:0; padding:26px 30px 60px;}
   .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px;}
@@ -129,7 +133,12 @@
   .month-check-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; max-height:220px; overflow:auto; border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--paper);}
   .month-check{display:flex; align-items:center; gap:7px; font-size:12.5px; padding:6px 7px; border-radius:7px; background:var(--card); border:1px solid var(--line); cursor:pointer;}
   .month-check.checked{border-color:var(--brand); background:var(--brand-tint);}
+  .month-check.prev-item{border-color:var(--plum); grid-column:1/-1;}
+  .month-check.prev-item.checked{background:var(--plum-tint);}
   .month-check input{margin:0;}
+  .amt-hint{font-size:11.5px; color:var(--ink-soft); margin-top:6px;}
+
+  .quick-links{display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;}
 
   .spinner{width:16px; height:16px; border-radius:50%; border:2.5px solid rgba(255,255,255,.4); border-top-color:#fff; animation:spin .7s linear infinite; display:inline-block;}
   @keyframes spin{to{transform:rotate(360deg);}}
@@ -174,7 +183,7 @@
       </div>
 
       <button class="btn btn-brand btn-block" id="loginBtn" onclick="doLogin()">ലോഗിൻ ചെയ്യുക</button>
-      <p class="setup-hint">© 2026 Designed & Developed by M.A.Muneer</p>
+      <p class="setup-hint">ഈ ആപ്പ് Google Sheet-മായി ബന്ധിപ്പിച്ചിരിക്കുന്നു. സെറ്റപ്പ് സംബന്ധിച്ച സഹായത്തിന് SETUP_README.md കാണുക.</p>
     </div>
   </div>
 </div>
@@ -189,6 +198,7 @@
     <button class="nav-item active"><span class="ic">🏠</span> എന്റെ കണക്ക്</button>
     <div class="sidebar-foot">
       <div class="who">👤 <span id="memberWhoName"></span></div>
+      <button class="link-btn" onclick="openChangePinModal()">🔑 PIN മാറ്റുക</button>
       <button class="btn btn-ghost btn-block" style="color:#fff;border-color:rgba(255,255,255,.3);" onclick="doLogout()">ലോഗ് ഔട്ട്</button>
     </div>
   </div>
@@ -212,7 +222,7 @@
       <div class="panel-head"><h3>വരിസംഖ്യ അടച്ച ചരിത്രം</h3></div>
       <div class="panel-body" style="padding:0;">
         <table>
-          <thead><tr><th class="txt-left">തീയതി</th><th class="txt-left">തുക</th><th class="txt-left">ഏത് മാസത്തേത്</th><th class="txt-left">കുറിപ്പ്</th></tr></thead>
+          <thead><tr><th class="txt-left">തീയതി</th><th class="txt-left">തുക</th><th class="txt-left">ഏത് മാസത്തേത്</th><th class="txt-left">വൗച്ചർ നം.</th><th class="txt-left">കുറിപ്പ്</th></tr></thead>
           <tbody id="memberPaymentHistory"></tbody>
         </table>
       </div>
@@ -242,9 +252,11 @@
     </div>
     <button class="nav-item active" data-view="dashboard" onclick="showAdminView('dashboard')"><span class="ic">📊</span> ഡാഷ്ബോർഡ്</button>
     <button class="nav-item" data-view="members" onclick="showAdminView('members')"><span class="ic">👥</span> അംഗങ്ങൾ</button>
+    <button class="nav-item hidden" id="navAdmins" data-view="admins" onclick="showAdminView('admins')"><span class="ic">🛡️</span> അഡ്മിൻമാർ</button>
     <button class="nav-item" data-view="settings" onclick="showAdminView('settings')"><span class="ic">⚙️</span> ക്രമീകരണം</button>
     <div class="sidebar-foot">
       <div class="who">👤 <span id="adminWhoName"></span></div>
+      <button class="link-btn" onclick="openChangeAdminPasswordModal()">🔑 എന്റെ പാസ്‌വേഡ് മാറ്റുക</button>
       <button class="btn btn-ghost btn-block" style="color:#fff;border-color:rgba(255,255,255,.3);" onclick="doLogout()">ലോഗ് ഔട്ട്</button>
     </div>
   </div>
@@ -296,7 +308,7 @@
         <div class="panel-head"><h3>വരിസംഖ്യ പേയ്‌മെന്റ് ചരിത്രം</h3></div>
         <div class="panel-body" style="padding:0;">
           <table>
-            <thead><tr><th class="txt-left">തീയതി</th><th class="txt-left">തുക</th><th class="txt-left">ഏത് മാസത്തേത്</th><th class="txt-left">കുറിപ്പ്</th><th></th></tr></thead>
+            <thead><tr><th class="txt-left">തീയതി</th><th class="txt-left">തുക</th><th class="txt-left">ഏത് മാസത്തേത്</th><th class="txt-left">വൗച്ചർ നം.</th><th class="txt-left">കുറിപ്പ്</th><th></th></tr></thead>
             <tbody id="detailPaymentHistory"></tbody>
           </table>
         </div>
@@ -332,9 +344,25 @@
       </div>
     </div>
 
+    <!-- ADMINS (സൂപ്പർ അഡ്മിൻ മാത്രം) -->
+    <div id="adminView-admins" class="hidden">
+      <div class="topbar">
+        <div><h1>അഡ്മിൻമാർ</h1><div class="sub">ഈ പേജ് സൂപ്പർ അഡ്മിനിന് മാത്രം കാണാൻ കഴിയും</div></div>
+        <button class="btn btn-gold" onclick="openAddAdminModal()">+ പുതിയ അഡ്മിൻ</button>
+      </div>
+      <div class="panel">
+        <div class="panel-body" style="padding:0; overflow-x:auto;">
+          <table>
+            <thead><tr><th class="txt-left">പേര്</th><th class="txt-left">യൂസർനെയിം</th><th>റോൾ</th><th>നില</th><th></th></tr></thead>
+            <tbody id="adminsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- SETTINGS -->
     <div id="adminView-settings" class="hidden">
-      <div class="topbar"><div><h1>ക്രമീകരണം</h1><div class="sub">സംഘടനയുടെ പേരും കണക്ക് തുടങ്ങുന്ന മാസവും അഡ്മിൻ പാസ്‌വേഡും</div></div></div>
+      <div class="topbar"><div><h1>ക്രമീകരണം</h1><div class="sub">സംഘടനയുടെ പേരും കണക്ക് തുടങ്ങുന്ന മാസവും</div></div></div>
       <div class="panel" style="max-width:480px;">
         <div class="panel-body">
           <div class="field"><label>സംഘടനയുടെ പേര്</label><input type="text" id="settingsOrgName"></div>
@@ -343,7 +371,6 @@
             <div class="field"><label>കണക്ക് ട്രാക്ക് ചെയ്യാൻ തുടങ്ങുന്ന മാസം</label><select id="settingsTrackMonth"></select></div>
           </div>
           <p class="muted" style="font-size:12px; margin-top:-6px; margin-bottom:16px;">ഇതിന് മുൻപുള്ള ബാക്കി, ഓരോ അംഗത്തിന്റെയും "മുൻ ബാലൻസ്" ആയി പ്രത്യേകം നൽകുക.</p>
-          <div class="field"><label>പുതിയ അഡ്മിൻ പാസ്‌വേഡ് (മാറ്റണമെങ്കിൽ മാത്രം നൽകുക)</label><input type="password" id="settingsAdminPassword" placeholder="••••••"></div>
           <button class="btn btn-brand" onclick="saveSettings()">സേവ് ചെയ്യുക</button>
         </div>
       </div>
@@ -384,7 +411,7 @@
         <div class="field"><label>ചേർന്ന വർഷം</label><input type="number" id="emYear"></div>
         <div class="field"><label>ചേർന്ന മാസം</label><select id="emMonth"></select></div>
       </div>
-      <div class="field"><label>മുൻ ബാലൻസ് (₹)</label><input type="number" id="emPrevBalance"></div>
+      <div class="field"><label>മുൻ ബാലൻസ് (₹) — ഒറിജിനൽ തുക</label><input type="number" id="emPrevBalance"></div>
       <div class="field"><label>PIN മാറ്റുക (വേണമെങ്കിൽ മാത്രം)</label><input type="text" id="emPin" placeholder="നിലവിലുള്ളത് സൂക്ഷിക്കാൻ ശൂന്യമായി വിടുക"></div>
       <div class="field"><label>നില</label><select id="emActive"><option value="true">സജീവം (Active)</option><option value="false">നിർജ്ജീവം (Inactive)</option></select></div>
     </div>
@@ -401,10 +428,16 @@
     <div class="modal-body">
       <div class="field">
         <label>ഏത് മാസത്തേത് ആണ്? (ഒന്നോ അതിലധികമോ തിരഞ്ഞെടുക്കാം) *</label>
+        <div class="quick-links">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="selectAllDueMonths()">ബാക്കിയുള്ള എല്ലാ മാസങ്ങളും</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="clearAllMonths()">എല്ലാം ഒഴിവാക്കുക</button>
+        </div>
         <div class="month-check-grid" id="apMonthGrid"></div>
+        <div class="amt-hint" id="apAmtHint"></div>
       </div>
       <div class="field"><label>ആകെ തുക (₹) *</label><input type="number" id="apAmount"></div>
       <div class="field"><label>തീയതി</label><input type="date" id="apDate"></div>
+      <div class="field"><label>വൗച്ചർ / രസീത് നമ്പർ</label><input type="text" id="apVoucher" placeholder="ഉദാ: RCT-0231"></div>
       <div class="field"><label>കുറിപ്പ് (ഓപ്ഷണൽ)</label><input type="text" id="apNote" placeholder="ഉദാ: ക്യാഷ് / GPay"></div>
     </div>
     <div class="modal-foot">
@@ -429,6 +462,79 @@
   </div>
 </div>
 
+<div id="modalChangePin" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head"><h3>PIN മാറ്റുക</h3><button class="modal-close" onclick="closeModal('modalChangePin')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>നിലവിലുള്ള PIN</label><input type="password" id="cpOldPin"></div>
+      <div class="field"><label>പുതിയ PIN</label><input type="password" id="cpNewPin"></div>
+      <div class="field"><label>പുതിയ PIN വീണ്ടും നൽകുക</label><input type="password" id="cpNewPin2"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modalChangePin')">റദ്ദാക്കുക</button>
+      <button class="btn btn-brand" id="cpSubmitBtn" onclick="submitChangePin()">സേവ് ചെയ്യുക</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalChangeAdminPassword" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head"><h3>പാസ്‌വേഡ് മാറ്റുക</h3><button class="modal-close" onclick="closeModal('modalChangeAdminPassword')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>നിലവിലുള്ള പാസ്‌വേഡ്</label><input type="password" id="capOld"></div>
+      <div class="field"><label>പുതിയ പാസ്‌വേഡ്</label><input type="password" id="capNew"></div>
+      <div class="field"><label>പുതിയ പാസ്‌വേഡ് വീണ്ടും നൽകുക</label><input type="password" id="capNew2"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modalChangeAdminPassword')">റദ്ദാക്കുക</button>
+      <button class="btn btn-brand" id="capSubmitBtn" onclick="submitChangeAdminPassword()">സേവ് ചെയ്യുക</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalAddAdmin" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head"><h3>പുതിയ അഡ്മിൻ ചേർക്കുക</h3><button class="modal-close" onclick="closeModal('modalAddAdmin')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>പേര് *</label><input type="text" id="aaName"></div>
+      <div class="field"><label>യൂസർനെയിം *</label><input type="text" id="aaUsername"></div>
+      <div class="field"><label>പാസ്‌വേഡ് *</label><input type="text" id="aaPassword"></div>
+      <div class="field"><label>റോൾ</label>
+        <select id="aaRole">
+          <option value="admin">സാധാരണ അഡ്മിൻ</option>
+          <option value="super">സൂപ്പർ അഡ്മിൻ (എല്ലാ അധികാരവും)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modalAddAdmin')">റദ്ദാക്കുക</button>
+      <button class="btn btn-brand" id="aaSubmitBtn" onclick="submitAddAdmin()">ചേർക്കുക</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalEditAdmin" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-head"><h3>അഡ്മിനെ എഡിറ്റ് ചെയ്യുക</h3><button class="modal-close" onclick="closeModal('modalEditAdmin')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>പേര്</label><input type="text" id="eaName"></div>
+      <div class="field"><label>യൂസർനെയിം</label><input type="text" id="eaUsername"></div>
+      <div class="field"><label>പുതിയ പാസ്‌വേഡ് (മാറ്റണമെങ്കിൽ മാത്രം)</label><input type="text" id="eaPassword" placeholder="ശൂന്യമായി വിട്ടാൽ മാറില്ല"></div>
+      <div class="field"><label>റോൾ</label>
+        <select id="eaRole"><option value="admin">സാധാരണ അഡ്മിൻ</option><option value="super">സൂപ്പർ അഡ്മിൻ</option></select>
+      </div>
+      <div class="field"><label>നില</label>
+        <select id="eaActive"><option value="true">സജീവം (Active)</option><option value="false">നിർജ്ജീവം (Inactive)</option></select>
+      </div>
+      <p class="muted" style="font-size:12px;" id="eaSelfNote">സ്വന്തം അക്കൗണ്ടിന്റെ റോളും നിലയും ഇവിടെ നിന്ന് മാറ്റാൻ കഴിയില്ല.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modalEditAdmin')">റദ്ദാക്കുക</button>
+      <button class="btn btn-brand" id="eaSubmitBtn" onclick="submitEditAdmin()">സേവ് ചെയ്യുക</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -440,6 +546,8 @@
   // താഴെയുള്ള കോഡ് സ്വയമേവ കണ്ടെത്തിക്കൊള്ളും.
   // =================================================================
   const CONFIGURED_APP_URL = "https://script.google.com/macros/s/AKfycbzOkBf8wHjvIoxDWyxkoeJLq-wYx3SSVrOjYMtDU-BmiV9sshlsf-atMjA0uxIwORT29w/exec";
+
+  const PREV_TOKEN = 'PREV';
 
   function apiBase(){
     if (CONFIGURED_APP_URL && CONFIGURED_APP_URL.indexOf('PASTE_') !== 0) return CONFIGURED_APP_URL;
@@ -459,6 +567,8 @@
   let ADMIN_MEMBERS_CACHE = [];
   let CURRENT_DETAIL_ID = null;
   let CURRENT_DETAIL_DATA = null;
+  let ADMINS_CACHE = [];
+  let CURRENT_EDIT_ADMIN_ID = null;
 
   const MONTHS_ML = ['ജനുവരി','ഫെബ്രുവരി','മാർച്ച്','ഏപ്രിൽ','മെയ്','ജൂൺ','ജൂലൈ','ഓഗസ്റ്റ്','സെപ്റ്റംബർ','ഒക്ടോബർ','നവംബർ','ഡിസംബർ'];
 
@@ -467,6 +577,7 @@
   function fmtMonthsList(csv){
     if (!csv) return '-';
     return csv.split(',').filter(Boolean).map(function(k){
+      if (k === PREV_TOKEN) return 'മുൻ ബാലൻസ്';
       const parts = k.split('-'); const y = parts[0], m = parseInt(parts[1],10);
       return MONTHS_ML[m-1] + ' ' + y;
     }).join(', ');
@@ -540,7 +651,8 @@
       SESSION = res;
       hideEl('loginScreen');
       if (res.role === 'admin'){
-        document.getElementById('adminWhoName').textContent = res.name;
+        document.getElementById('adminWhoName').textContent = res.name + (res.isSuper ? ' (സൂപ്പർ അഡ്മിൻ)' : '');
+        document.getElementById('navAdmins').classList.toggle('hidden', !res.isSuper);
         showEl('adminApp'); loadAdminDashboard();
       } else {
         document.getElementById('memberWhoName').textContent = res.name;
@@ -561,19 +673,57 @@
     showEl('loginScreen');
   }
 
+  // ---------------- MEMBER: CHANGE PIN ----------------
+  function openChangePinModal(){
+    document.getElementById('cpOldPin').value = '';
+    document.getElementById('cpNewPin').value = '';
+    document.getElementById('cpNewPin2').value = '';
+    showEl('modalChangePin');
+  }
+  function submitChangePin(){
+    const oldPin = document.getElementById('cpOldPin').value.trim();
+    const newPin = document.getElementById('cpNewPin').value.trim();
+    const newPin2 = document.getElementById('cpNewPin2').value.trim();
+    if (!oldPin || !newPin){ toast('എല്ലാ ഫീൽഡും പൂരിപ്പിക്കുക.', true); return; }
+    if (newPin !== newPin2){ toast('പുതിയ PIN രണ്ടിടത്തും ഒരുപോലെ നൽകുക.', true); return; }
+    const btn = document.getElementById('cpSubmitBtn'); btn.disabled = true;
+    callApi('changeMyPin', { token: SESSION.token, oldPin: oldPin, newPin: newPin }).then(function(){
+      btn.disabled=false; closeModal('modalChangePin'); toast('PIN മാറ്റി.');
+    }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
+  }
+
+  // ---------------- ADMIN: CHANGE OWN PASSWORD ----------------
+  function openChangeAdminPasswordModal(){
+    document.getElementById('capOld').value = '';
+    document.getElementById('capNew').value = '';
+    document.getElementById('capNew2').value = '';
+    showEl('modalChangeAdminPassword');
+  }
+  function submitChangeAdminPassword(){
+    const oldPw = document.getElementById('capOld').value.trim();
+    const newPw = document.getElementById('capNew').value.trim();
+    const newPw2 = document.getElementById('capNew2').value.trim();
+    if (!oldPw || !newPw){ toast('എല്ലാ ഫീൽഡും പൂരിപ്പിക്കുക.', true); return; }
+    if (newPw !== newPw2){ toast('പുതിയ പാസ്‌വേഡ് രണ്ടിടത്തും ഒരുപോലെ നൽകുക.', true); return; }
+    const btn = document.getElementById('capSubmitBtn'); btn.disabled = true;
+    callApi('changeMyAdminPassword', { token: SESSION.token, oldPassword: oldPw, newPassword: newPw }).then(function(){
+      btn.disabled=false; closeModal('modalChangeAdminPassword'); toast('പാസ്‌വേഡ് മാറ്റി.');
+    }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
+  }
+
   // ---------------- MEMBER VIEW ----------------
   function loadMemberData(){
     callApi('getMyData', { token: SESSION.token }).then(renderMemberData).catch(function(err){ toast(err.message, true); });
   }
 
   function renderMemberData(d){
-    document.getElementById('memberTrackNote').textContent = MONTHS_ML[d.trackingStartMonth-1] + ' ' + d.trackingStartYear;
+    document.getElementById('memberTrackNote').textContent = MONTHS_ML[d.displayStartMonth-1] + ' ' + d.displayStartYear;
     const statsHtml =
       '<div class="stat-card brand"><div class="lbl">പ്രതിമാസ വരിസംഖ്യ</div><div class="val num">'+fmtMoney(d.monthlyAmount)+'</div></div>' +
       '<div class="stat-card ok"><div class="lbl">ആകെ അടച്ചത്</div><div class="val num">'+fmtMoney(d.totalPaid)+'</div></div>' +
       '<div class="stat-card '+(d.balance>0?'bad':'ok')+'"><div class="lbl">നിലവിലെ ബാലൻസ്</div><div class="val num">'+fmtMoney(Math.max(d.balance,0))+'</div></div>' +
-      '<div class="stat-card gold"><div class="lbl">അടച്ച മാസങ്ങൾ</div><div class="val num">'+d.monthsFullyPaid+' / '+d.monthsElapsed+'</div></div>' +
-      (d.previousBalance ? '<div class="stat-card plum"><div class="lbl">മുൻ ബാലൻസ് ('+MONTHS_ML[d.trackingStartMonth-1]+' '+d.trackingStartYear+'-ന് മുൻപ്)</div><div class="val num">'+fmtMoney(d.previousBalance)+'</div></div>' : '');
+      '<div class="stat-card gold"><div class="lbl">അടച്ച മാസങ്ങൾ</div><div class="val num">'+d.monthsFullyPaid+' / '+d.monthlyStatus.length+'</div></div>' +
+      (d.previousBalance > 0 ? '<div class="stat-card plum"><div class="lbl">മുൻ ബാലൻസ് ('+MONTHS_ML[d.displayStartMonth-1]+' '+d.displayStartYear+'-ന് മുൻപ്)</div><div class="val num">'+fmtMoney(d.previousBalance)+'</div></div>' : '');
     document.getElementById('memberStats').innerHTML = statsHtml;
 
     document.getElementById('memberMonthGrid').innerHTML = d.monthlyStatus.slice().reverse().map(function(ms){
@@ -581,8 +731,8 @@
     }).join('') || '<div class="empty">വിവരമില്ല</div>';
 
     document.getElementById('memberPaymentHistory').innerHTML = (d.paymentHistory||[]).map(function(p){
-      return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+fmtMonthsList(p.coveredMonths)+'</td><td class="txt-left">'+(p.note||'-')+'</td></tr>';
-    }).join('') || '<tr><td colspan="4" class="empty">ഇതുവരെ വരിസംഖ്യ പേയ്‌മെന്റുകൾ ഒന്നും ഇല്ല</td></tr>';
+      return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+fmtMonthsList(p.coveredMonths)+'</td><td class="txt-left">'+(p.voucherNo||'-')+'</td><td class="txt-left">'+(p.note||'-')+'</td></tr>';
+    }).join('') || '<tr><td colspan="5" class="empty">ഇതുവരെ വരിസംഖ്യ പേയ്‌മെന്റുകൾ ഒന്നും ഇല്ല</td></tr>';
 
     document.getElementById('memberDonationTotal').textContent = fmtMoney(d.totalDonations);
     document.getElementById('memberDonationHistory').innerHTML = (d.donationHistory||[]).map(function(p){
@@ -600,7 +750,7 @@
   }
 
   function renderAdminStats(list){
-    const totalExpected = list.reduce(function(s,m){return s+m.totalExpected+m.previousBalance;},0);
+    const totalExpected = list.reduce(function(s,m){return s+m.totalExpected+m.manualPreviousBalance;},0);
     const totalPaid = list.reduce(function(s,m){return s+m.totalPaid;},0);
     const totalBalance = totalExpected - totalPaid;
     const totalDonations = list.reduce(function(s,m){return s+m.totalDonations;},0);
@@ -636,7 +786,7 @@
   }
 
   function showAdminView(view){
-    ['dashboard','memberDetail','members','settings'].forEach(function(v){
+    ['dashboard','memberDetail','members','admins','settings'].forEach(function(v){
       document.getElementById('adminView-'+v).classList.toggle('hidden', v!==view);
     });
     document.querySelectorAll('.nav-item[data-view]').forEach(function(el){
@@ -648,6 +798,7 @@
       document.getElementById('settingsTrackYear').value = ORG.trackingStartYear;
       document.getElementById('settingsTrackMonth').value = ORG.trackingStartMonth;
     }
+    if (view === 'admins'){ loadAdmins(); }
   }
 
   // ---------------- ADMIN: MEMBER DETAIL ----------------
@@ -662,27 +813,27 @@
     CURRENT_DETAIL_DATA = d;
     document.getElementById('detailName').textContent = d.name;
     document.getElementById('detailPhone').textContent = (d.phone||'-') + '  ·  ' + d.memberId;
-    document.getElementById('detailTrackNote').textContent = MONTHS_ML[d.trackingStartMonth-1] + ' ' + d.trackingStartYear;
+    document.getElementById('detailTrackNote').textContent = MONTHS_ML[d.displayStartMonth-1] + ' ' + d.displayStartYear;
 
     document.getElementById('detailStats').innerHTML =
       '<div class="stat-card brand"><div class="lbl">പ്രതിമാസ വരിസംഖ്യ</div><div class="val num">'+fmtMoney(d.monthlyAmount)+'</div></div>' +
       '<div class="stat-card ok"><div class="lbl">ആകെ അടച്ചത്</div><div class="val num">'+fmtMoney(d.totalPaid)+'</div></div>' +
       '<div class="stat-card '+(d.balance>0?'bad':'ok')+'"><div class="lbl">ബാലൻസ്</div><div class="val num">'+fmtMoney(Math.max(d.balance,0))+'</div></div>' +
-      '<div class="stat-card gold"><div class="lbl">അടച്ച മാസങ്ങൾ</div><div class="val num">'+d.monthsFullyPaid+' / '+d.monthsElapsed+'</div></div>' +
-      '<div class="stat-card plum"><div class="lbl">മുൻ ബാലൻസ്</div><div class="val num">'+fmtMoney(d.previousBalance)+'</div></div>';
+      '<div class="stat-card gold"><div class="lbl">അടച്ച മാസങ്ങൾ</div><div class="val num">'+d.monthsFullyPaid+' / '+d.monthlyStatus.length+'</div></div>' +
+      '<div class="stat-card plum"><div class="lbl">മുൻ ബാലൻസ് (ആകെ)</div><div class="val num">'+fmtMoney(d.previousBalance)+'</div></div>';
 
     document.getElementById('detailMonthGrid').innerHTML = d.monthlyStatus.slice().reverse().map(function(ms){
       return '<div class="month-chip '+ms.status+'"><b>'+ms.monthName+' '+ms.year+'</b><span>'+statusLabel(ms.status)+' · '+fmtMoney(ms.paid)+'/'+fmtMoney(ms.expected)+'</span></div>';
     }).join('') || '<div class="empty">വിവരമില്ല</div>';
 
     document.getElementById('detailPaymentHistory').innerHTML = (d.paymentHistory||[]).map(function(p){
-      return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+fmtMonthsList(p.coveredMonths)+'</td><td class="txt-left">'+(p.note||'-')+'</td>' +
-        '<td style="text-align:left;"><button class="btn btn-ghost" style="padding:5px 10px; font-size:12px; color:var(--bad); border-color:var(--bad-tint);" onclick="removePayment(\''+p.id+'\')">നീക്കം ചെയ്യുക</button></td></tr>';
-    }).join('') || '<tr><td colspan="5" class="empty">ഇതുവരെ പേയ്‌മെന്റുകൾ ഒന്നും ഇല്ല</td></tr>';
+      return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+fmtMonthsList(p.coveredMonths)+'</td><td class="txt-left">'+(p.voucherNo||'-')+'</td><td class="txt-left">'+(p.note||'-')+'</td>' +
+        '<td style="text-align:left;"><button class="btn btn-ghost btn-sm" style="color:var(--bad); border-color:var(--bad-tint);" onclick="removePayment(\''+p.id+'\')">നീക്കം ചെയ്യുക</button></td></tr>';
+    }).join('') || '<tr><td colspan="6" class="empty">ഇതുവരെ പേയ്‌മെന്റുകൾ ഒന്നും ഇല്ല</td></tr>';
 
     document.getElementById('detailDonationHistory').innerHTML = (d.donationHistory||[]).map(function(p){
       return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+(p.note||'-')+'</td>' +
-        '<td style="text-align:left;"><button class="btn btn-ghost" style="padding:5px 10px; font-size:12px; color:var(--bad); border-color:var(--bad-tint);" onclick="removeDonation(\''+p.id+'\')">നീക്കം ചെയ്യുക</button></td></tr>';
+        '<td style="text-align:left;"><button class="btn btn-ghost btn-sm" style="color:var(--bad); border-color:var(--bad-tint);" onclick="removeDonation(\''+p.id+'\')">നീക്കം ചെയ്യുക</button></td></tr>';
     }).join('') || '<tr><td colspan="4" class="empty">ഇതുവരെ സംഭാവനകൾ ഒന്നും ഇല്ല</td></tr>';
   }
 
@@ -735,7 +886,7 @@
     document.getElementById('emAmount').value = d.monthlyAmount;
     document.getElementById('emYear').value = d.joinYear;
     document.getElementById('emMonth').value = d.joinMonth;
-    document.getElementById('emPrevBalance').value = d.previousBalance;
+    document.getElementById('emPrevBalance').value = d.manualPreviousBalance;
     document.getElementById('emPin').value = '';
     document.getElementById('emActive').value = d.active ? 'true' : 'false';
     showEl('modalEditMember');
@@ -757,20 +908,31 @@
     }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
   }
 
-  // ---------------- ADMIN: ADD PAYMENT (with month selection) ----------------
+  // ---------------- ADMIN: ADD PAYMENT (with month + previous-balance selection) ----------------
   function openAddPaymentModal(){
     const d = CURRENT_DETAIL_DATA;
     document.getElementById('apAmount').value = '';
     document.getElementById('apDate').valueAsDate = new Date();
+    document.getElementById('apVoucher').value = '';
     document.getElementById('apNote').value = '';
 
     const grid = document.getElementById('apMonthGrid');
     grid.innerHTML = '';
+
+    // "മുൻ ബാലൻസ്" ചെക്ക്ബോക്സ് — ബാക്കി ഉള്ളപ്പോൾ മാത്രം കാണിക്കുന്നു
+    if (d && d.previousBalanceRemaining > 0){
+      const prevLabel = document.createElement('label');
+      prevLabel.className = 'month-check prev-item';
+      prevLabel.innerHTML = '<input type="checkbox" value="'+PREV_TOKEN+'" data-amt="'+d.previousBalanceRemaining+'" onchange="onPayMonthToggle(this)"> ' +
+        'മുൻ ബാലൻസ് (ഈ ആപ്പിന് / '+MONTHS_ML[d.trackingStartMonth-1]+' '+d.trackingStartYear+'-ന് മുൻപ് — ബാക്കി '+fmtMoney(d.previousBalanceRemaining)+')';
+      grid.appendChild(prevLabel);
+    }
+
     if (d && d.monthlyStatus){
       d.monthlyStatus.slice().reverse().forEach(function(ms){
         const label = document.createElement('label');
-        label.className = 'month-check' + (ms.status==='due' ? ' checked' : '');
-        label.innerHTML = '<input type="checkbox" value="'+ms.key+'" data-amt="'+(ms.expected-ms.paid)+'" '+(ms.status==='due'?'checked':'')+' onchange="onPayMonthToggle(this)"> ' +
+        label.className = 'month-check';
+        label.innerHTML = '<input type="checkbox" value="'+ms.key+'" data-amt="'+(ms.expected-ms.paid)+'" onchange="onPayMonthToggle(this)"> ' +
           ms.monthName+' '+ms.year+' ('+statusLabel(ms.status)+')';
         grid.appendChild(label);
       });
@@ -782,21 +944,39 @@
     cb.closest('.month-check').classList.toggle('checked', cb.checked);
     recomputeSuggestedAmount();
   }
+  function selectAllDueMonths(){
+    document.querySelectorAll('#apMonthGrid input[type=checkbox]').forEach(function(cb){
+      const isDueMonth = cb.value !== PREV_TOKEN && Number(cb.dataset.amt) > 0;
+      cb.checked = isDueMonth;
+      cb.closest('.month-check').classList.toggle('checked', isDueMonth);
+    });
+    recomputeSuggestedAmount();
+  }
+  function clearAllMonths(){
+    document.querySelectorAll('#apMonthGrid input[type=checkbox]').forEach(function(cb){
+      cb.checked = false; cb.closest('.month-check').classList.remove('checked');
+    });
+    recomputeSuggestedAmount();
+  }
   function recomputeSuggestedAmount(){
     const checked = document.querySelectorAll('#apMonthGrid input:checked');
     let sum = 0;
     checked.forEach(function(cb){ sum += Number(cb.dataset.amt) || 0; });
     document.getElementById('apAmount').value = sum > 0 ? sum : '';
+    const hint = document.getElementById('apAmtHint');
+    if (checked.length > 1) hint.textContent = 'ആകെ തുക ' + checked.length + ' ഇനങ്ങൾക്കിടയിൽ തുല്യമായി വീതിക്കപ്പെടും (ഓരോന്നിനും ഏകദേശം ' + fmtMoney(sum/checked.length) + ').';
+    else hint.textContent = '';
   }
   function submitAddPayment(){
     const checked = Array.from(document.querySelectorAll('#apMonthGrid input:checked')).map(function(cb){ return cb.value; });
     const amount = document.getElementById('apAmount').value;
     const date = document.getElementById('apDate').value;
+    const voucherNo = document.getElementById('apVoucher').value.trim();
     const note = document.getElementById('apNote').value.trim();
-    if (checked.length === 0){ toast('ഏത് മാസത്തേതാണ് എന്ന് തിരഞ്ഞെടുക്കുക.', true); return; }
+    if (checked.length === 0){ toast('ഏത് മാസത്തേതാണ് (അല്ലെങ്കിൽ മുൻ ബാലൻസ്) എന്ന് തിരഞ്ഞെടുക്കുക.', true); return; }
     if (!amount || Number(amount) <= 0){ toast('ശരിയായ തുക നൽകുക.', true); return; }
     const btn = document.getElementById('apSubmitBtn'); btn.disabled = true;
-    callApi('addPayment', { token: SESSION.token, memberId: CURRENT_DETAIL_ID, amount: amount, date: date, note: note, coveredMonths: checked }).then(function(){
+    callApi('addPayment', { token: SESSION.token, memberId: CURRENT_DETAIL_ID, amount: amount, date: date, note: note, voucherNo: voucherNo, coveredMonths: checked }).then(function(){
       btn.disabled=false; closeModal('modalAddPayment'); toast('വരിസംഖ്യ ചേർത്തു.'); openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
     }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
   }
@@ -824,13 +1004,79 @@
     const orgName = document.getElementById('settingsOrgName').value.trim();
     const trackYear = document.getElementById('settingsTrackYear').value;
     const trackMonth = document.getElementById('settingsTrackMonth').value;
-    const adminPassword = document.getElementById('settingsAdminPassword').value.trim();
     if (!orgName){ toast('സംഘടനയുടെ പേര് നൽകുക.', true); return; }
-    callApi('updateOrgSettings', { token: SESSION.token, settings: { orgName: orgName, trackingStartYear: trackYear, trackingStartMonth: trackMonth, adminPassword: adminPassword } }).then(function(info){
+    callApi('updateOrgSettings', { token: SESSION.token, settings: { orgName: orgName, trackingStartYear: trackYear, trackingStartMonth: trackMonth } }).then(function(info){
       ORG = info; applyOrgBranding();
-      document.getElementById('settingsAdminPassword').value = '';
       toast('ക്രമീകരണം സേവ് ചെയ്തു.');
     }).catch(function(err){ toast(err.message, true); });
+  }
+
+  // ---------------- SUPER ADMIN: MANAGE ADMINS ----------------
+  function loadAdmins(){
+    callApi('listAdmins', { token: SESSION.token }).then(function(list){
+      ADMINS_CACHE = list;
+      document.getElementById('adminsTableBody').innerHTML = list.map(function(a){
+        return '<tr>' +
+          '<td class="txt-left">'+a.displayName+'</td>' +
+          '<td class="txt-left">'+a.username+'</td>' +
+          '<td><span class="badge '+(a.role==='super'?'super':'paid')+'">'+(a.role==='super'?'സൂപ്പർ അഡ്മിൻ':'അഡ്മിൻ')+'</span></td>' +
+          '<td><span class="badge '+(a.active?'paid':'due')+'">'+(a.active?'സജീവം':'നിർജ്ജീവം')+'</span></td>' +
+          '<td style="text-align:left;"><button class="btn btn-ghost btn-sm" onclick="openEditAdminModal(\''+a.adminId+'\')">എഡിറ്റ്</button></td>' +
+          '</tr>';
+      }).join('') || '<tr><td colspan="5" class="empty">ഒരു അഡ്മിനും ഇല്ല</td></tr>';
+    }).catch(function(err){ toast(err.message, true); });
+  }
+  function openAddAdminModal(){
+    document.getElementById('aaName').value = '';
+    document.getElementById('aaUsername').value = '';
+    document.getElementById('aaPassword').value = '';
+    document.getElementById('aaRole').value = 'admin';
+    showEl('modalAddAdmin');
+  }
+  function submitAddAdmin(){
+    const data = {
+      displayName: document.getElementById('aaName').value.trim(),
+      username: document.getElementById('aaUsername').value.trim(),
+      password: document.getElementById('aaPassword').value.trim(),
+      role: document.getElementById('aaRole').value
+    };
+    if (!data.displayName || !data.username || !data.password){ toast('എല്ലാ ഫീൽഡും പൂരിപ്പിക്കുക.', true); return; }
+    const btn = document.getElementById('aaSubmitBtn'); btn.disabled = true;
+    callApi('addAdmin', { token: SESSION.token, data: data }).then(function(){
+      btn.disabled=false; closeModal('modalAddAdmin'); toast('അഡ്മിനെ ചേർത്തു.'); loadAdmins();
+    }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
+  }
+  function openEditAdminModal(adminId){
+    const a = ADMINS_CACHE.find(function(x){ return x.adminId === adminId; });
+    if (!a) return;
+    CURRENT_EDIT_ADMIN_ID = adminId;
+    document.getElementById('eaName').value = a.displayName;
+    document.getElementById('eaUsername').value = a.username;
+    document.getElementById('eaPassword').value = '';
+    document.getElementById('eaRole').value = a.role;
+    document.getElementById('eaActive').value = a.active ? 'true' : 'false';
+    const isSelf = (adminId === SESSION.id);
+    document.getElementById('eaRole').disabled = isSelf;
+    document.getElementById('eaActive').disabled = isSelf;
+    document.getElementById('eaSelfNote').style.display = isSelf ? 'block' : 'none';
+    showEl('modalEditAdmin');
+  }
+  function submitEditAdmin(){
+    const isSelf = (CURRENT_EDIT_ADMIN_ID === SESSION.id);
+    const data = {
+      displayName: document.getElementById('eaName').value.trim(),
+      username: document.getElementById('eaUsername').value.trim()
+    };
+    const pw = document.getElementById('eaPassword').value.trim();
+    if (pw) data.password = pw;
+    if (!isSelf){
+      data.role = document.getElementById('eaRole').value;
+      data.active = document.getElementById('eaActive').value === 'true';
+    }
+    const btn = document.getElementById('eaSubmitBtn'); btn.disabled = true;
+    callApi('updateAdmin', { token: SESSION.token, adminId: CURRENT_EDIT_ADMIN_ID, data: data }).then(function(){
+      btn.disabled=false; closeModal('modalEditAdmin'); toast('സേവ് ചെയ്തു.'); loadAdmins();
+    }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
   }
 </script>
 </body>
