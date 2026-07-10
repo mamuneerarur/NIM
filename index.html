@@ -215,7 +215,7 @@
       </div>
 
       <button class="btn btn-brand btn-block" id="loginBtn" onclick="doLogin()">ലോഗിൻ ചെയ്യുക</button>
-      <p class="setup-hint">ഈ ആപ്പ് Google Sheet-മായി ബന്ധിപ്പിച്ചിരിക്കുന്നു. സെറ്റപ്പ് സംബന്ധിച്ച സഹായത്തിന് SETUP_README.md കാണുക.</p>
+      <p class="setup-hint">© 2026 Designed & Developed by M.A.Muneer.</p>
       <p class="setup-hint" id="versionTag" style="opacity:.6;"></p>
     </div>
   </div>
@@ -603,6 +603,19 @@
   <div class="pdf-foot" id="pdfFootNote"></div>
 </div>
 
+<div id="modalReceiptPrompt" class="modal-bg hidden">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-head"><h3>രസീത് അയക്കണോ?</h3><button class="modal-close" onclick="closeModal('modalReceiptPrompt')">✕</button></div>
+    <div class="modal-body">
+      <p style="margin:0; font-size:14px;">വരിസംഖ്യ ചേർത്തു കഴിഞ്ഞു. ഈ പേയ്‌മെന്റിന്റെ രസീത് അംഗത്തിന്റെ WhatsApp-ലേക്ക് ഇപ്പോൾ അയക്കണോ?</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('modalReceiptPrompt')">വേണ്ട</button>
+      <button class="btn btn-wa" onclick="confirmSendReceipt()">🧾 WhatsApp-ൽ രസീത് അയക്കുക</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -616,7 +629,7 @@
   const CONFIGURED_APP_URL = "https://script.google.com/macros/s/AKfycbzOkBf8wHjvIoxDWyxkoeJLq-wYx3SSVrOjYMtDU-BmiV9sshlsf-atMjA0uxIwORT29w/exec";
 
   const PREV_TOKEN = 'PREV';
-  const APP_VERSION = 'v6 · 2026-07-08 (WhatsApp receipt + salaam greeting)';
+  const APP_VERSION = 'Web application V7';
   const WA_FOOTER_LINK = 'കൂടുതൽ വിവരങ്ങൾക്ക് ഇവിടെ ലോഗിൻ ചെയ്യുക: https://rb.gy/chbkbu';
 
   function apiBase(){
@@ -639,6 +652,7 @@
   let CURRENT_DETAIL_DATA = null;
   let ADMINS_CACHE = [];
   let CURRENT_EDIT_ADMIN_ID = null;
+  let LAST_ADDED_PAYMENT = null;
 
   const MONTHS_ML = ['ജനുവരി','ഫെബ്രുവരി','മാർച്ച്','ഏപ്രിൽ','മെയ്','ജൂൺ','ജൂലൈ','ഓഗസ്റ്റ്','സെപ്റ്റംബർ','ഒക്ടോബർ','നവംബർ','ഡിസംബർ'];
 
@@ -1102,7 +1116,10 @@
     if (!amount || Number(amount) <= 0){ toast('ശരിയായ തുക നൽകുക.', true); return; }
     const btn = document.getElementById('apSubmitBtn'); btn.disabled = true;
     callApi('addPayment', { token: SESSION.token, memberId: CURRENT_DETAIL_ID, amount: amount, date: date, note: note, voucherNo: voucherNo, coveredMonths: checked }).then(function(){
-      btn.disabled=false; closeModal('modalAddPayment'); toast('വരിസംഖ്യ ചേർത്തു.'); openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
+      btn.disabled=false; closeModal('modalAddPayment'); toast('വരിസംഖ്യ ചേർത്തു.');
+      LAST_ADDED_PAYMENT = { amount: amount, date: date, voucherNo: voucherNo, coveredMonths: checked.join(',') };
+      openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
+      showEl('modalReceiptPrompt');
     }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
   }
 
@@ -1245,6 +1262,10 @@
       'നന്ദി.\n\n' +
       WA_FOOTER_LINK;
     openWaChat(d.phone, text);
+  }
+  function confirmSendReceipt(){
+    closeModal('modalReceiptPrompt');
+    if (LAST_ADDED_PAYMENT) sendWhatsAppReceipt(LAST_ADDED_PAYMENT);
   }
 
   // =================================================================
