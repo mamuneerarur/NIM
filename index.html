@@ -6,6 +6,8 @@
 <title>സംഭാവന കണക്ക്</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --ink:#23211d; --ink-soft:#6f6a5f;
@@ -55,7 +57,7 @@
   .btn-sm{padding:6px 12px; font-size:12.5px;}
   .btn-block{width:100%;}
   .btn[disabled]{opacity:.55; cursor:not-allowed;}
-  .login-error{background:var(--bad-tint); color:var(--bad); border-radius:8px; padding:9px 12px; font-size:13px; margin-bottom:14px; display:none; font-weight:600;}
+  .login-error{background:var(--bad-tint); color:var(--bad); border-radius:8px; padding:9px 12px; font-size:13px; margin-bottom:14px; font-weight:600; border:1px solid var(--bad);}
   .login-role-toggle{display:flex; background:var(--paper); border-radius:10px; padding:4px; margin-bottom:22px; border:1px solid var(--line);}
   .login-role-toggle button{flex:1; border:none; background:transparent; padding:9px 0; border-radius:7px; font-size:13.5px; font-weight:700; color:var(--ink-soft); cursor:pointer;}
   .login-role-toggle button.active{background:var(--brand); color:#fff;}
@@ -135,6 +137,8 @@
   .month-check.checked{border-color:var(--brand); background:var(--brand-tint);}
   .month-check.prev-item{border-color:var(--plum); grid-column:1/-1;}
   .month-check.prev-item.checked{background:var(--plum-tint);}
+  .month-check.future-item{border-style:dashed; color:var(--ink-soft);}
+  .month-check.future-item.checked{background:var(--brand-tint); border-style:solid; border-color:var(--brand); color:var(--ink);}
   .month-check input{margin:0;}
   .amt-hint{font-size:11.5px; color:var(--ink-soft); margin-top:6px;}
 
@@ -144,6 +148,34 @@
   @keyframes spin{to{transform:rotate(360deg);}}
 
   .hamburger{display:none; background:var(--brand-deep); color:#fff; border:none; border-radius:8px; padding:8px 10px; font-size:16px; cursor:pointer;}
+
+  .btn-wa{background:#25D366; color:#fff;}
+  .btn-wa:hover{background:#1ebe57;}
+  .icon-wa{display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:8px; background:#e9f8ee; color:#1ebe57; border:1px solid #cdeedb; cursor:pointer; font-size:15px; text-decoration:none;}
+  .icon-wa:hover{background:#cdeedb;}
+  .row-actions{display:flex; gap:6px; align-items:center; justify-content:flex-start;}
+
+  /* PDF സ്റ്റേറ്റ്മെന്റ് ടെംപ്ലേറ്റ് - സ്ക്രീനിന് പുറത്ത് റെൻഡർ ചെയ്ത്, html2canvas ഉപയോഗിച്ച് ചിത്രം ആക്കി PDF-ൽ ഇടും */
+  #pdfStatementTemplate{
+    position:absolute; left:-99999px; top:0; width:720px; background:#ffffff; color:#1a1a1a;
+    font-family:'Noto Sans Malayalam','DM Sans',sans-serif; padding:36px;
+  }
+  .pdf-head{display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1f5c4c; padding-bottom:16px; margin-bottom:20px;}
+  .pdf-head h1{font-size:22px; margin:0 0 4px; color:#1f5c4c;}
+  .pdf-head .pdf-sub{font-size:12.5px; color:#6f6a5f;}
+  .pdf-head .pdf-date{font-size:11.5px; color:#6f6a5f; text-align:left;}
+  .pdf-member-box{background:#f6f2e9; border-radius:10px; padding:14px 18px; margin-bottom:18px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+  .pdf-member-box div b{display:block; font-size:15px; margin-bottom:2px;}
+  .pdf-member-box div span{font-size:12px; color:#6f6a5f;}
+  .pdf-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px;}
+  .pdf-stats .c{border:1px solid #e2d9c2; border-radius:8px; padding:10px 12px;}
+  .pdf-stats .c .l{font-size:10.5px; color:#6f6a5f; margin-bottom:4px;}
+  .pdf-stats .c .v{font-size:16px; font-weight:800; color:#1f5c4c;}
+  #pdfStatementTemplate h3{font-size:14px; color:#1f5c4c; border-bottom:1px solid #e2d9c2; padding-bottom:6px; margin:22px 0 10px;}
+  #pdfStatementTemplate table{width:100%; border-collapse:collapse; font-size:11.5px;}
+  #pdfStatementTemplate th{background:#efe8d8; padding:7px 8px; text-align:right; border:1px solid #e2d9c2; font-size:10.5px;}
+  #pdfStatementTemplate td{padding:6px 8px; border:1px solid #e2d9c2; text-align:left;}
+  #pdfStatementTemplate .pdf-foot{margin-top:24px; font-size:10.5px; color:#6f6a5f; text-align:center; border-top:1px solid #e2d9c2; padding-top:10px;}
 
   @media (max-width:820px){
     .sidebar{position:fixed; z-index:60; height:100vh; transform:translateX(100%); transition:transform .2s; top:0; right:0;}
@@ -170,8 +202,8 @@
         <button type="button" id="roleAdminBtn" onclick="setRole('admin')">അഡ്മിൻ</button>
       </div>
 
-      <div class="login-error" id="loginError"></div>
-      <div class="login-error" id="configError" style="display:none;"></div>
+      <div class="login-error hidden" id="loginError"></div>
+      <div class="login-error hidden" id="configError"></div>
 
       <div class="field">
         <label id="loginIdLabel">മെമ്പർ ഐഡി / ഫോൺ നമ്പർ</label>
@@ -183,7 +215,8 @@
       </div>
 
       <button class="btn btn-brand btn-block" id="loginBtn" onclick="doLogin()">ലോഗിൻ ചെയ്യുക</button>
-      <p class="setup-hint">© 2026 Designed & Developed by M.A.Muneer</p>
+      <p class="setup-hint">ഈ ആപ്പ് Google Sheet-മായി ബന്ധിപ്പിച്ചിരിക്കുന്നു. സെറ്റപ്പ് സംബന്ധിച്ച സഹായത്തിന് SETUP_README.md കാണുക.</p>
+      <p class="setup-hint" id="versionTag" style="opacity:.6;"></p>
     </div>
   </div>
 </div>
@@ -296,6 +329,11 @@
           <button class="btn btn-plum" onclick="openAddDonationModal()">+ സംഭാവന ചേർക്കുക</button>
           <button class="btn btn-brand" onclick="openAddPaymentModal()">+ വരിസംഖ്യ ചേർക്കുക</button>
         </div>
+      </div>
+      <div class="quick-links">
+        <button class="btn btn-ghost btn-sm" id="pdfOnlyBtn" onclick="downloadStatementPdf()">📄 PDF ഡൗൺലോഡ്</button>
+        <button class="btn btn-wa btn-sm" id="pdfWaBtn" onclick="sharePdfOnWhatsApp()">📄 PDF + WhatsApp അയക്കുക</button>
+        <button class="btn btn-ghost btn-sm" onclick="sendWhatsAppReminder(CURRENT_DETAIL_DATA)">💬 ഓർമ്മപ്പെടുത്തൽ മാത്രം (ടെക്സ്റ്റ്)</button>
       </div>
       <div class="stat-row" id="detailStats"></div>
 
@@ -430,6 +468,8 @@
         <label>ഏത് മാസത്തേത് ആണ്? (ഒന്നോ അതിലധികമോ തിരഞ്ഞെടുക്കാം) *</label>
         <div class="quick-links">
           <button type="button" class="btn btn-ghost btn-sm" onclick="selectAllDueMonths()">ബാക്കിയുള്ള എല്ലാ മാസങ്ങളും</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="selectAdvanceMonths(3)">അടുത്ത 3 മാസം അഡ്വാൻസ്</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="selectAdvanceMonths(12)">അടുത്ത 12 മാസം അഡ്വാൻസ്</button>
           <button type="button" class="btn btn-ghost btn-sm" onclick="clearAllMonths()">എല്ലാം ഒഴിവാക്കുക</button>
         </div>
         <div class="month-check-grid" id="apMonthGrid"></div>
@@ -535,6 +575,34 @@
   </div>
 </div>
 
+<!-- ============ PDF STATEMENT TEMPLATE (സ്ക്രീനിൽ കാണില്ല, PDF ഉണ്ടാക്കാൻ മാത്രം) ============ -->
+<div id="pdfStatementTemplate">
+  <div class="pdf-head">
+    <div>
+      <h1 id="pdfOrgName">NIMP</h1>
+      <div class="pdf-sub">വരിസംഖ്യ / സംഭാവന സ്റ്റേറ്റ്മെന്റ്</div>
+    </div>
+    <div class="pdf-date" id="pdfGeneratedDate"></div>
+  </div>
+  <div class="pdf-member-box">
+    <div>
+      <b id="pdfMemberName">-</b>
+      <span id="pdfMemberMeta">-</span>
+    </div>
+    <div style="text-align:left;">
+      <span id="pdfTrackNote"></span>
+    </div>
+  </div>
+  <div class="pdf-stats" id="pdfStats"></div>
+  <h3>മാസം തിരിച്ചുള്ള നില</h3>
+  <table><thead><tr><th>മാസം</th><th>പ്രതീക്ഷിച്ചത്</th><th>അടച്ചത്</th><th>നില</th></tr></thead><tbody id="pdfMonthTable"></tbody></table>
+  <h3>വരിസംഖ്യ പേയ്‌മെന്റ് ചരിത്രം</h3>
+  <table><thead><tr><th>തീയതി</th><th>തുക</th><th>ഏത് മാസത്തേത്</th><th>വൗച്ചർ നം.</th><th>കുറിപ്പ്</th></tr></thead><tbody id="pdfPaymentTable"></tbody></table>
+  <h3 id="pdfDonationHeading">സംഭാവനകൾ (വരിസംഖ്യ അല്ല)</h3>
+  <table id="pdfDonationTableWrap"><thead><tr><th>തീയതി</th><th>തുക</th><th>കുറിപ്പ്</th></tr></thead><tbody id="pdfDonationTable"></tbody></table>
+  <div class="pdf-foot" id="pdfFootNote"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -548,6 +616,8 @@
   const CONFIGURED_APP_URL = "https://script.google.com/macros/s/AKfycbzOkBf8wHjvIoxDWyxkoeJLq-wYx3SSVrOjYMtDU-BmiV9sshlsf-atMjA0uxIwORT29w/exec";
 
   const PREV_TOKEN = 'PREV';
+  const APP_VERSION = 'v6 · 2026-07-08 (WhatsApp receipt + salaam greeting)';
+  const WA_FOOTER_LINK = 'കൂടുതൽ വിവരങ്ങൾക്ക് ഇവിടെ ലോഗിൻ ചെയ്യുക: https://rb.gy/chbkbu';
 
   function apiBase(){
     if (CONFIGURED_APP_URL && CONFIGURED_APP_URL.indexOf('PASTE_') !== 0) return CONFIGURED_APP_URL;
@@ -572,7 +642,11 @@
 
   const MONTHS_ML = ['ജനുവരി','ഫെബ്രുവരി','മാർച്ച്','ഏപ്രിൽ','മെയ്','ജൂൺ','ജൂലൈ','ഓഗസ്റ്റ്','സെപ്റ്റംബർ','ഒക്ടോബർ','നവംബർ','ഡിസംബർ'];
 
-  function fmtMoney(n){ n = Number(n)||0; return '₹' + n.toLocaleString('en-IN', {maximumFractionDigits:0}); }
+  function fmtMoney(n){
+    n = Number(n)||0;
+    const sign = n < 0 ? '-' : '';
+    return sign + '₹' + Math.abs(n).toLocaleString('en-IN', {maximumFractionDigits:0});
+  }
   function fmtDate(d){ if(!d) return '-'; const dt = new Date(d); if (isNaN(dt)) return String(d); return dt.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}); }
   function fmtMonthsList(csv){
     if (!csv) return '-';
@@ -601,6 +675,7 @@
   }
 
   window.addEventListener('DOMContentLoaded', function(){
+    document.getElementById('versionTag').textContent = APP_VERSION;
     populateMonthSelect(document.getElementById('amMonth'));
     populateMonthSelect(document.getElementById('emMonth'));
     populateMonthSelect(document.getElementById('settingsTrackMonth'));
@@ -610,7 +685,7 @@
     callApi('getOrgInfo', {}).then(function(info){
       ORG = info; applyOrgBranding();
     }).catch(function(err){
-      document.getElementById('configError').style.display = 'block';
+      document.getElementById('configError').classList.remove('hidden');
       document.getElementById('configError').textContent =
         'സെർവറുമായി ബന്ധപ്പെടാൻ കഴിഞ്ഞില്ല. index.html-ലെ CONFIGURED_APP_URL ശരിയായി സെറ്റ് ചെയ്തിട്ടുണ്ടോ എന്ന് പരിശോധിക്കുക. (' + err.message + ')';
     });
@@ -721,7 +796,7 @@
     const statsHtml =
       '<div class="stat-card brand"><div class="lbl">പ്രതിമാസ വരിസംഖ്യ</div><div class="val num">'+fmtMoney(d.monthlyAmount)+'</div></div>' +
       '<div class="stat-card ok"><div class="lbl">ആകെ അടച്ചത്</div><div class="val num">'+fmtMoney(d.totalPaid)+'</div></div>' +
-      '<div class="stat-card '+(d.balance>0?'bad':'ok')+'"><div class="lbl">നിലവിലെ ബാലൻസ്</div><div class="val num">'+fmtMoney(Math.max(d.balance,0))+'</div></div>' +
+      '<div class="stat-card '+(d.balance>0?'bad':'ok')+'"><div class="lbl">നിലവിലെ ബാലൻസ്'+(d.balance<0?' (അഡ്വാൻസ്)':'')+'</div><div class="val num">'+fmtMoney(d.balance)+'</div></div>' +
       '<div class="stat-card gold"><div class="lbl">അടച്ച മാസങ്ങൾ</div><div class="val num">'+d.monthsFullyPaid+' / '+d.monthlyStatus.length+'</div></div>' +
       (d.previousBalance > 0 ? '<div class="stat-card plum"><div class="lbl">മുൻ ബാലൻസ് ('+MONTHS_ML[d.displayStartMonth-1]+' '+d.displayStartYear+'-ന് മുൻപ്)</div><div class="val num">'+fmtMoney(d.previousBalance)+'</div></div>' : '');
     document.getElementById('memberStats').innerHTML = statsHtml;
@@ -752,13 +827,17 @@
   function renderAdminStats(list){
     const totalExpected = list.reduce(function(s,m){return s+m.totalExpected+m.manualPreviousBalance;},0);
     const totalPaid = list.reduce(function(s,m){return s+m.totalPaid;},0);
-    const totalBalance = totalExpected - totalPaid;
+    // ബാക്കിയുള്ളവരുടെ തുകയും അഡ്വാൻസ് അടച്ചവരുടെ (നെഗറ്റീവ് ബാലൻസ്) തുകയും
+    // വെവ്വേറെ കൂട്ടുന്നു - ഒന്നും മറ്റൊന്നിനെ മറച്ചു കളയാതിരിക്കാൻ.
+    const totalDue = list.reduce(function(s,m){ return s + Math.max(m.balance,0); },0);
+    const totalAdvance = list.reduce(function(s,m){ return s + Math.max(-m.balance,0); },0);
     const totalDonations = list.reduce(function(s,m){return s+m.totalDonations;},0);
     document.getElementById('adminStats').innerHTML =
       '<div class="stat-card brand"><div class="lbl">ആകെ അംഗങ്ങൾ</div><div class="val num">'+list.length+'</div></div>' +
       '<div class="stat-card gold"><div class="lbl">പ്രതീക്ഷിച്ച ആകെ തുക (മുൻ ബാലൻസ് ഉൾപ്പെടെ)</div><div class="val num">'+fmtMoney(totalExpected)+'</div></div>' +
       '<div class="stat-card ok"><div class="lbl">ആകെ പിരിഞ്ഞു കിട്ടിയ വരിസംഖ്യ</div><div class="val num">'+fmtMoney(totalPaid)+'</div></div>' +
-      '<div class="stat-card bad"><div class="lbl">ആകെ ബാക്കി</div><div class="val num">'+fmtMoney(Math.max(totalBalance,0))+'</div></div>' +
+      '<div class="stat-card bad"><div class="lbl">ആകെ ബാക്കി (അടക്കാനുള്ളവർ)</div><div class="val num">'+fmtMoney(totalDue)+'</div></div>' +
+      '<div class="stat-card ok"><div class="lbl">ആകെ അഡ്വാൻസ് (മുൻകൂർ അടച്ചത്)</div><div class="val num">'+fmtMoney(totalAdvance)+'</div></div>' +
       '<div class="stat-card plum"><div class="lbl">ആകെ സംഭാവന (വരിസംഖ്യ അല്ല)</div><div class="val num">'+fmtMoney(totalDonations)+'</div></div>';
   }
 
@@ -770,15 +849,17 @@
       return !q || m.name.toLowerCase().indexOf(q)>=0 || String(m.memberId).toLowerCase().indexOf(q)>=0 || String(m.phone).indexOf(q)>=0;
     });
     const rowsHtml = filtered.map(function(m){
-      const totalBal = Math.max(m.balance,0);
-      return '<tr style="cursor:pointer" onclick="openMemberDetail(\''+m.memberId+'\')">' +
-        '<td class="txt-left"><b>'+m.name+'</b><br><span class="muted" style="font-size:11.5px;">'+m.memberId+'</span></td>' +
-        '<td class="txt-left">'+(m.phone||'-')+'</td>' +
-        '<td class="num">'+fmtMoney(m.monthlyAmount)+'</td>' +
-        '<td class="num">'+fmtMoney(m.totalPaid)+'</td>' +
-        '<td class="num" style="color:'+(m.balance>0?'var(--bad)':'var(--ok)')+'">'+fmtMoney(totalBal)+'</td>' +
-        '<td><span class="badge '+(m.active?'paid':'due')+'">'+(m.active?'സജീവം':'നിർജ്ജീവം')+'</span></td>' +
-        '<td style="text-align:left;">➜</td></tr>';
+      return '<tr>' +
+        '<td class="txt-left" style="cursor:pointer" onclick="openMemberDetail(\''+m.memberId+'\')"><b>'+m.name+'</b><br><span class="muted" style="font-size:11.5px;">'+m.memberId+'</span></td>' +
+        '<td class="txt-left" style="cursor:pointer" onclick="openMemberDetail(\''+m.memberId+'\')">'+(m.phone||'-')+'</td>' +
+        '<td class="num" style="cursor:pointer" onclick="openMemberDetail(\''+m.memberId+'\')">'+fmtMoney(m.monthlyAmount)+'</td>' +
+        '<td class="num" style="cursor:pointer" onclick="openMemberDetail(\''+m.memberId+'\')">'+fmtMoney(m.totalPaid)+'</td>' +
+        '<td class="num" style="cursor:pointer; color:'+(m.balance>0?'var(--bad)':'var(--ok)')+'" onclick="openMemberDetail(\''+m.memberId+'\')">'+fmtMoney(m.balance)+'</td>' +
+        '<td style="cursor:pointer" onclick="openMemberDetail(\''+m.memberId+'\')"><span class="badge '+(m.active?'paid':'due')+'">'+(m.active?'സജീവം':'നിർജ്ജീവം')+'</span></td>' +
+        '<td><div class="row-actions">' +
+          (m.phone && m.balance>0 ? '<a class="icon-wa" title="ഓർമ്മപ്പെടുത്തൽ അയക്കുക" href="javascript:void(0)" onclick="event.stopPropagation(); sendWhatsAppReminder('+JSON.stringify(m).replace(/"/g,'&quot;')+')">💬</a>' : '') +
+          '<span style="cursor:pointer" onclick="openMemberDetail(\''+m.memberId+'\')">➜</span>' +
+        '</div></td></tr>';
     }).join('');
     document.getElementById('membersTableBody').innerHTML = rowsHtml;
     document.getElementById('membersTableBody2').innerHTML = rowsHtml;
@@ -818,7 +899,7 @@
     document.getElementById('detailStats').innerHTML =
       '<div class="stat-card brand"><div class="lbl">പ്രതിമാസ വരിസംഖ്യ</div><div class="val num">'+fmtMoney(d.monthlyAmount)+'</div></div>' +
       '<div class="stat-card ok"><div class="lbl">ആകെ അടച്ചത്</div><div class="val num">'+fmtMoney(d.totalPaid)+'</div></div>' +
-      '<div class="stat-card '+(d.balance>0?'bad':'ok')+'"><div class="lbl">ബാലൻസ്</div><div class="val num">'+fmtMoney(Math.max(d.balance,0))+'</div></div>' +
+      '<div class="stat-card '+(d.balance>0?'bad':'ok')+'"><div class="lbl">ബാലൻസ്'+(d.balance<0?' (അഡ്വാൻസ്)':'')+'</div><div class="val num">'+fmtMoney(d.balance)+'</div></div>' +
       '<div class="stat-card gold"><div class="lbl">അടച്ച മാസങ്ങൾ</div><div class="val num">'+d.monthsFullyPaid+' / '+d.monthlyStatus.length+'</div></div>' +
       '<div class="stat-card plum"><div class="lbl">മുൻ ബാലൻസ് (ആകെ)</div><div class="val num">'+fmtMoney(d.previousBalance)+'</div></div>';
 
@@ -828,7 +909,10 @@
 
     document.getElementById('detailPaymentHistory').innerHTML = (d.paymentHistory||[]).map(function(p){
       return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+fmtMonthsList(p.coveredMonths)+'</td><td class="txt-left">'+(p.voucherNo||'-')+'</td><td class="txt-left">'+(p.note||'-')+'</td>' +
-        '<td style="text-align:left;"><button class="btn btn-ghost btn-sm" style="color:var(--bad); border-color:var(--bad-tint);" onclick="removePayment(\''+p.id+'\')">നീക്കം ചെയ്യുക</button></td></tr>';
+        '<td><div class="row-actions">' +
+          (d.phone ? '<a class="icon-wa" title="രസീത് WhatsApp അയക്കുക" href="javascript:void(0)" onclick="sendWhatsAppReceipt('+JSON.stringify(p).replace(/"/g,'&quot;')+')">🧾</a>' : '') +
+          '<button class="btn btn-ghost btn-sm" style="color:var(--bad); border-color:var(--bad-tint);" onclick="removePayment(\''+p.id+'\')">നീക്കം ചെയ്യുക</button>' +
+        '</div></td></tr>';
     }).join('') || '<tr><td colspan="6" class="empty">ഇതുവരെ പേയ്‌മെന്റുകൾ ഒന്നും ഇല്ല</td></tr>';
 
     document.getElementById('detailDonationHistory').innerHTML = (d.donationHistory||[]).map(function(p){
@@ -919,12 +1003,15 @@
     const grid = document.getElementById('apMonthGrid');
     grid.innerHTML = '';
 
-    // "മുൻ ബാലൻസ്" ചെക്ക്ബോക്സ് — ബാക്കി ഉള്ളപ്പോൾ മാത്രം കാണിക്കുന്നു
-    if (d && d.previousBalanceRemaining > 0){
+    // "മുൻ ബാലൻസ്" ചെക്ക്ബോക്സ് — എപ്പോഴും കാണിക്കും (ബാക്കി ഇല്ലെങ്കിലും
+    // സെലക്ട് ചെയ്യാൻ കഴിയും, ബാക്കി ഇല്ലെങ്കിൽ ആ വിവരം കാണിക്കും)
+    if (d){
+      const remaining = d.previousBalanceRemaining || 0;
       const prevLabel = document.createElement('label');
       prevLabel.className = 'month-check prev-item';
-      prevLabel.innerHTML = '<input type="checkbox" value="'+PREV_TOKEN+'" data-amt="'+d.previousBalanceRemaining+'" onchange="onPayMonthToggle(this)"> ' +
-        'മുൻ ബാലൻസ് (ഈ ആപ്പിന് / '+MONTHS_ML[d.trackingStartMonth-1]+' '+d.trackingStartYear+'-ന് മുൻപ് — ബാക്കി '+fmtMoney(d.previousBalanceRemaining)+')';
+      prevLabel.innerHTML = '<input type="checkbox" value="'+PREV_TOKEN+'" data-amt="'+Math.max(remaining,0)+'" onchange="onPayMonthToggle(this)"> ' +
+        'മുൻ ബാലൻസ് (ഈ ആപ്പിന് / '+MONTHS_ML[d.trackingStartMonth-1]+' '+d.trackingStartYear+'-ന് മുൻപ് — ' +
+        (remaining > 0 ? 'ബാക്കി '+fmtMoney(remaining) : 'നിലവിൽ ബാക്കി ഇല്ല') + ')';
       grid.appendChild(prevLabel);
     }
 
@@ -937,8 +1024,35 @@
         grid.appendChild(label);
       });
     }
+
+    // വരാനിരിക്കുന്ന (അഡ്വാൻസ്) 12 മാസങ്ങൾ കൂടി സെലക്ട് ചെയ്യാൻ ഓപ്ഷൻ —
+    // മുൻകൂർ ഒന്നിലധികം മാസത്തെ വരിസംഖ്യ അടച്ചാൽ, ആ മാസങ്ങൾ വരുമ്പോൾ
+    // ഗ്രിഡിൽ ശരിയായി "അടച്ചു" എന്ന് കാണിക്കാൻ ഇത് ആവശ്യമാണ്.
+    if (d){
+      futureMonthList(12).forEach(function(fm){
+        const label = document.createElement('label');
+        label.className = 'month-check future-item';
+        label.innerHTML = '<input type="checkbox" value="'+fm.key+'" data-amt="'+d.monthlyAmount+'" onchange="onPayMonthToggle(this)"> ' +
+          MONTHS_ML[fm.month-1]+' '+fm.year+' (അഡ്വാൻസ്)';
+        grid.appendChild(label);
+      });
+    }
+
     recomputeSuggestedAmount();
     showEl('modalAddPayment');
+  }
+
+  // നിലവിലെ മാസത്തിന് ശേഷമുള്ള അടുത്ത N മാസങ്ങൾ - അഡ്വാൻസ് പേയ്‌മെന്റ്
+  // സെലക്ട് ചെയ്യാൻ വേണ്ടി
+  function futureMonthList(count){
+    const now = new Date();
+    let y = now.getFullYear(), m = now.getMonth() + 1;
+    const list = [];
+    for (let i = 0; i < count; i++){
+      m++; if (m > 12){ m = 1; y++; }
+      list.push({ key: y + '-' + (m < 10 ? '0'+m : ''+m), year: y, month: m });
+    }
+    return list;
   }
   function onPayMonthToggle(cb){
     cb.closest('.month-check').classList.toggle('checked', cb.checked);
@@ -946,9 +1060,20 @@
   }
   function selectAllDueMonths(){
     document.querySelectorAll('#apMonthGrid input[type=checkbox]').forEach(function(cb){
-      const isDueMonth = cb.value !== PREV_TOKEN && Number(cb.dataset.amt) > 0;
+      const wrap = cb.closest('.month-check');
+      const isDueMonth = cb.value !== PREV_TOKEN && !wrap.classList.contains('future-item') && Number(cb.dataset.amt) > 0;
       cb.checked = isDueMonth;
-      cb.closest('.month-check').classList.toggle('checked', isDueMonth);
+      wrap.classList.toggle('checked', isDueMonth);
+    });
+    recomputeSuggestedAmount();
+  }
+  function selectAdvanceMonths(count){
+    let n = 0;
+    document.querySelectorAll('#apMonthGrid .month-check.future-item input[type=checkbox]').forEach(function(cb){
+      const wrap = cb.closest('.month-check');
+      const check = n < count;
+      cb.checked = check; wrap.classList.toggle('checked', check);
+      n++;
     });
     recomputeSuggestedAmount();
   }
@@ -1077,6 +1202,169 @@
     callApi('updateAdmin', { token: SESSION.token, adminId: CURRENT_EDIT_ADMIN_ID, data: data }).then(function(){
       btn.disabled=false; closeModal('modalEditAdmin'); toast('സേവ് ചെയ്തു.'); loadAdmins();
     }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
+  }
+
+  // =================================================================
+  // WHATSAPP — ടെക്സ്റ്റ് ഓർമ്മപ്പെടുത്തൽ (wa.me ലിങ്ക്, ഒരു ക്ലിക്ക്)
+  // =================================================================
+  // ഇന്ത്യൻ 10 അക്ക നമ്പറുകൾക്ക് 91 ചേർക്കുന്നു. നമ്പർ നേരത്തെ തന്നെ
+  // രാജ്യകോഡ് സഹിതം ഉണ്ടെങ്കിൽ അതേപടി ഉപയോഗിക്കും.
+  function toWaPhone(phone){
+    let digits = String(phone||'').replace(/\D/g, '');
+    if (digits.length === 10) digits = '91' + digits;
+    else if (digits.length === 11 && digits.charAt(0) === '0') digits = '91' + digits.slice(1);
+    return digits;
+  }
+  function openWaChat(phone, text){
+    const digits = toWaPhone(phone);
+    if (!digits){ toast('ഈ അംഗത്തിന് ഫോൺ നമ്പർ രേഖപ്പെടുത്തിയിട്ടില്ല.', true); return; }
+    window.open('https://wa.me/' + digits + '?text=' + encodeURIComponent(text), '_blank');
+  }
+  function sendWhatsAppReminder(m){
+    if (!m){ toast('അംഗത്തിന്റെ വിവരം ലോഡ് ആയില്ല.', true); return; }
+    if (m.balance <= 0){ toast('ഈ അംഗത്തിന് ബാക്കി ഇല്ല (അഡ്വാൻസ് അടച്ചിട്ടുണ്ട് എങ്കിൽ ഓർമ്മപ്പെടുത്തലിന്റെ ആവശ്യമില്ല).', true); return; }
+    const bal = m.balance;
+    const text = 'ٱلسَّلَامُ عَلَيْكُمْ ' + m.name + ',\n' +
+      ORG.orgName + ' - നിങ്ങളുടെ വരിസംഖ്യ ബാലൻസ്: ' + fmtMoney(bal) + '.\n' +
+      'എത്രയും വേഗം അടച്ചു തീർക്കാൻ അഭ്യർത്ഥിക്കുന്നു. നന്ദി.\n\n' +
+      WA_FOOTER_LINK;
+    openWaChat(m.phone, text);
+  }
+
+  // ഒരു നിശ്ചിത പേയ്‌മെന്റിന്റെ രസീത് ടെക്സ്റ്റ് ആയി WhatsApp വഴി അയക്കുന്നു
+  function sendWhatsAppReceipt(p){
+    const d = CURRENT_DETAIL_DATA;
+    if (!d){ toast('അംഗത്തിന്റെ വിവരം ലോഡ് ആയില്ല.', true); return; }
+    if (!d.phone){ toast('ഈ അംഗത്തിന് ഫോൺ നമ്പർ രേഖപ്പെടുത്തിയിട്ടില്ല.', true); return; }
+    const text = 'ٱلسَّلَامُ عَلَيْكُمْ ' + d.name + ',\n' +
+      ORG.orgName + ' - നിങ്ങളുടെ വരിസംഖ്യ പേയ്‌മെന്റ് രസീത്:\n' +
+      'തുക: ' + fmtMoney(p.amount) + '\n' +
+      'തീയതി: ' + fmtDate(p.date) + '\n' +
+      'ഏത് മാസത്തേത്: ' + fmtMonthsList(p.coveredMonths) + '\n' +
+      (p.voucherNo ? 'വൗച്ചർ നം: ' + p.voucherNo + '\n' : '') +
+      'നന്ദി.\n\n' +
+      WA_FOOTER_LINK;
+    openWaChat(d.phone, text);
+  }
+
+  // =================================================================
+  // PDF സ്റ്റേറ്റ്മെന്റ് — html2canvas (ബ്രൗസർ റെൻഡർ ചെയ്ത DOM-ന്റെ
+  // ചിത്രം എടുക്കുന്നു, അതിനാൽ മലയാളം ഫോണ്ട് കൃത്യമായി വരും) + jsPDF
+  // =================================================================
+  function populatePdfTemplate(d){
+    document.getElementById('pdfOrgName').textContent = ORG.orgName;
+    document.getElementById('pdfGeneratedDate').textContent = 'തയ്യാറാക്കിയ തീയതി: ' + fmtDate(new Date());
+    document.getElementById('pdfMemberName').textContent = d.name;
+    document.getElementById('pdfMemberMeta').textContent = d.memberId + (d.phone ? ' · ' + d.phone : '');
+    document.getElementById('pdfTrackNote').textContent = 'കണക്ക് ട്രാക്ക്: ' + MONTHS_ML[d.trackingStartMonth-1] + ' ' + d.trackingStartYear + ' മുതൽ';
+
+    document.getElementById('pdfStats').innerHTML =
+      '<div class="c"><div class="l">പ്രതിമാസ വരിസംഖ്യ</div><div class="v">'+fmtMoney(d.monthlyAmount)+'</div></div>' +
+      '<div class="c"><div class="l">ആകെ അടച്ചത്</div><div class="v">'+fmtMoney(d.totalPaid)+'</div></div>' +
+      '<div class="c"><div class="l">ബാലൻസ്'+(d.balance<0?' (അഡ്വാൻസ്)':'')+'</div><div class="v">'+fmtMoney(d.balance)+'</div></div>' +
+      '<div class="c"><div class="l">മുൻ ബാലൻസ്</div><div class="v">'+fmtMoney(d.previousBalance)+'</div></div>';
+
+    document.getElementById('pdfMonthTable').innerHTML = (d.monthlyStatus||[]).map(function(ms){
+      return '<tr><td>'+ms.monthName+' '+ms.year+'</td><td>'+fmtMoney(ms.expected)+'</td><td>'+fmtMoney(ms.paid)+'</td><td>'+statusLabel(ms.status)+'</td></tr>';
+    }).join('') || '<tr><td colspan="4">വിവരമില്ല</td></tr>';
+
+    document.getElementById('pdfPaymentTable').innerHTML = (d.paymentHistory||[]).map(function(p){
+      return '<tr><td>'+fmtDate(p.date)+'</td><td>'+fmtMoney(p.amount)+'</td><td>'+fmtMonthsList(p.coveredMonths)+'</td><td>'+(p.voucherNo||'-')+'</td><td>'+(p.note||'-')+'</td></tr>';
+    }).join('') || '<tr><td colspan="5">ഇതുവരെ പേയ്‌മെന്റുകൾ ഇല്ല</td></tr>';
+
+    const hasDonations = (d.donationHistory||[]).length > 0;
+    document.getElementById('pdfDonationHeading').style.display = hasDonations ? 'block' : 'none';
+    document.getElementById('pdfDonationTableWrap').style.display = hasDonations ? 'table' : 'none';
+    document.getElementById('pdfDonationTable').innerHTML = (d.donationHistory||[]).map(function(p){
+      return '<tr><td>'+fmtDate(p.date)+'</td><td>'+fmtMoney(p.amount)+'</td><td>'+(p.note||'-')+'</td></tr>';
+    }).join('');
+
+    document.getElementById('pdfFootNote').textContent = ORG.orgName + ' — ഈ സ്റ്റേറ്റ്മെന്റ് ഓട്ടോമാറ്റിക് ആയി ഉണ്ടാക്കിയതാണ്.';
+  }
+
+  // DOM-നെ ഒന്നിലധികം A4 പേജുകളായി jsPDF-ലേക്ക് ചേർക്കുന്നു
+  function generateStatementPdfBlob(d){
+    return new Promise(function(resolve, reject){
+      if (!window.html2canvas || !window.jspdf){
+        reject(new Error('PDF ലൈബ്രറി ലോഡ് ആയില്ല. ഇന്റർനെറ്റ് കണക്ഷൻ പരിശോധിച്ച് വീണ്ടും ശ്രമിക്കുക.'));
+        return;
+      }
+      populatePdfTemplate(d);
+      const el = document.getElementById('pdfStatementTemplate');
+      // ബ്രൗസർ ലേഔട്ട് ചെയ്ത് കഴിയാൻ ഒരു നിമിഷം കാത്തിരിക്കുന്നു
+      setTimeout(function(){
+        html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas){
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF('p', 'pt', 'a4');
+          const pageW = pdf.internal.pageSize.getWidth();
+          const pageH = pdf.internal.pageSize.getHeight();
+          const imgW = pageW;
+          const imgH = canvas.height * (imgW / canvas.width);
+          let heightLeft = imgH;
+          let position = 0;
+          const imgData = canvas.toDataURL('image/png');
+
+          pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
+          heightLeft -= pageH;
+          while (heightLeft > 0){
+            position = heightLeft - imgH;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgW, imgH);
+            heightLeft -= pageH;
+          }
+          resolve(pdf.output('blob'));
+        }).catch(reject);
+      }, 60);
+    });
+  }
+
+  function statementFilename(d){
+    return (d.memberId || 'member') + '-statement.pdf';
+  }
+
+  function downloadStatementPdf(){
+    const d = CURRENT_DETAIL_DATA;
+    if (!d){ toast('അംഗത്തിന്റെ വിവരം ലോഡ് ആയില്ല.', true); return; }
+    const btn = document.getElementById('pdfOnlyBtn'); btn.disabled = true;
+    generateStatementPdfBlob(d).then(function(blob){
+      btn.disabled = false;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = statementFilename(d);
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      toast('PDF ഡൗൺലോഡ് ആയി.');
+    }).catch(function(err){ btn.disabled = false; toast(err.message, true); });
+  }
+
+  // "ഒറ്റ ക്ലിക്കിൽ" PDF + WhatsApp: മൊബൈലിൽ (Web Share API ഫയൽ
+  // സപ്പോർട്ട് ഉള്ളപ്പോൾ) നേരിട്ട് ഷെയർ ഷീറ്റ് തുറന്ന് WhatsApp സെലക്ട്
+  // ചെയ്യാം. അല്ലെങ്കിൽ (ഡെസ്ക്ടോപ്പ്) PDF ഡൗൺലോഡ് ചെയ്ത് ആ അംഗത്തിന്റെ
+  // WhatsApp ചാറ്റ് തുറന്നു തരും - ഡൗൺലോഡ് ആയ ഫയൽ അവിടെ ഒട്ടിക്കുക (attach) മാത്രമേ ബാക്കിയുള്ളൂ.
+  function sharePdfOnWhatsApp(){
+    const d = CURRENT_DETAIL_DATA;
+    if (!d){ toast('അംഗത്തിന്റെ വിവരം ലോഡ് ആയില്ല.', true); return; }
+    const btn = document.getElementById('pdfWaBtn'); btn.disabled = true;
+    generateStatementPdfBlob(d).then(function(blob){
+      btn.disabled = false;
+      const filename = statementFilename(d);
+      const file = new File([blob], filename, { type: 'application/pdf' });
+      const shareText = 'ٱلسَّلَامُ عَلَيْكُمْ ' + d.name + ', ' + ORG.orgName + ' - നിങ്ങളുടെ വരിസംഖ്യ സ്റ്റേറ്റ്മെന്റ്.\n\n' + WA_FOOTER_LINK;
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })){
+        navigator.share({ files: [file], title: filename, text: shareText })
+          .catch(function(err){ if (err.name !== 'AbortError') toast(err.message, true); });
+      } else {
+        // ഡെസ്ക്ടോപ്പ് ഫോൾബാക്ക്: ഡൗൺലോഡ് + WhatsApp ചാറ്റ് ഒരുമിച്ച് തുറക്കുന്നു
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+        toast('PDF ഡൗൺലോഡ് ആയി. WhatsApp ചാറ്റ് തുറക്കുന്നു - ഫയൽ അറ്റാച്ച് ചെയ്യുക.');
+        setTimeout(function(){ openWaChat(d.phone, shareText); }, 600);
+      }
+    }).catch(function(err){ btn.disabled = false; toast(err.message, true); });
   }
 </script>
 </body>
