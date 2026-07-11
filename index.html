@@ -607,7 +607,7 @@
   <div class="modal" style="max-width:380px;">
     <div class="modal-head"><h3>രസീത് അയക്കണോ?</h3><button class="modal-close" onclick="closeModal('modalReceiptPrompt')">✕</button></div>
     <div class="modal-body">
-      <p style="margin:0; font-size:14px;">വരിസംഖ്യ ചേർത്തു കഴിഞ്ഞു. ഈ പേയ്‌മെന്റിന്റെ രസീത് അംഗത്തിന്റെ WhatsApp-ലേക്ക് ഇപ്പോൾ അയക്കണോ?</p>
+      <p style="margin:0; font-size:14px;" id="receiptPromptText">ചേർത്തു കഴിഞ്ഞു. ഈ ഇനത്തിന്റെ രസീത് അംഗത്തിന്റെ WhatsApp-ലേക്ക് ഇപ്പോൾ അയക്കണോ?</p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal('modalReceiptPrompt')">വേണ്ട</button>
@@ -629,7 +629,7 @@
   const CONFIGURED_APP_URL = "https://script.google.com/macros/s/AKfycbzOkBf8wHjvIoxDWyxkoeJLq-wYx3SSVrOjYMtDU-BmiV9sshlsf-atMjA0uxIwORT29w/exec";
 
   const PREV_TOKEN = 'PREV';
-  const APP_VERSION = 'Web application V7';
+  const APP_VERSION = 'Web application V8';
   const WA_FOOTER_LINK = 'കൂടുതൽ വിവരങ്ങൾക്ക് ഇവിടെ ലോഗിൻ ചെയ്യുക: https://rb.gy/chbkbu';
 
   function apiBase(){
@@ -652,7 +652,7 @@
   let CURRENT_DETAIL_DATA = null;
   let ADMINS_CACHE = [];
   let CURRENT_EDIT_ADMIN_ID = null;
-  let LAST_ADDED_PAYMENT = null;
+  let LAST_RECEIPT = null; // { kind: 'payment'|'donation', data: {...} }
 
   const MONTHS_ML = ['ജനുവരി','ഫെബ്രുവരി','മാർച്ച്','ഏപ്രിൽ','മെയ്','ജൂൺ','ജൂലൈ','ഓഗസ്റ്റ്','സെപ്റ്റംബർ','ഒക്ടോബർ','നവംബർ','ഡിസംബർ'];
 
@@ -756,6 +756,12 @@
 
   function doLogout(){
     if (SESSION) callApi('logout', { token: SESSION.token }).catch(function(){});
+    try {
+      if (SESSION){
+        sessionStorage.removeItem('cache_dashboard_' + SESSION.id);
+        sessionStorage.removeItem('cache_mydata_' + SESSION.id);
+      }
+    } catch (e) {}
     SESSION = null;
     hideEl('memberApp'); hideEl('adminApp');
     document.getElementById('loginId').value=''; document.getElementById('loginSecret').value='';
@@ -802,7 +808,15 @@
 
   // ---------------- MEMBER VIEW ----------------
   function loadMemberData(){
-    callApi('getMyData', { token: SESSION.token }).then(renderMemberData).catch(function(err){ toast(err.message, true); });
+    try {
+      const cached = sessionStorage.getItem('cache_mydata_' + SESSION.id);
+      if (cached) renderMemberData(JSON.parse(cached));
+    } catch (e) {}
+
+    callApi('getMyData', { token: SESSION.token }).then(function(d){
+      renderMemberData(d);
+      try { sessionStorage.setItem('cache_mydata_' + SESSION.id, JSON.stringify(d)); } catch (e) {}
+    }).catch(function(err){ toast(err.message, true); });
   }
 
   function renderMemberData(d){
@@ -831,10 +845,24 @@
 
   // ---------------- ADMIN: DASHBOARD ----------------
   function loadAdminDashboard(){
+    const cacheKey = 'cache_dashboard_' + SESSION.id;
+    // പഴയ ഡാറ്റ ഉണ്ടെങ്കിൽ ഉടനെ കാണിക്കും (വേഗത്തിന്), അതേസമയം പുതിയ
+    // ഡാറ്റ പശ്ചാത്തലത്തിൽ ലോഡ് ചെയ്ത് വരുമ്പോൾ അപ്ഡേറ്റ് ചെയ്യും.
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached){
+        const list = JSON.parse(cached);
+        ADMIN_MEMBERS_CACHE = list;
+        renderAdminStats(list);
+        renderMembersTable();
+      }
+    } catch (e) {}
+
     callApi('getAllMembersSummary', { token: SESSION.token }).then(function(list){
       ADMIN_MEMBERS_CACHE = list;
       renderAdminStats(list);
       renderMembersTable();
+      try { sessionStorage.setItem(cacheKey, JSON.stringify(list)); } catch (e) {}
     }).catch(function(err){ toast(err.message, true); });
   }
 
@@ -931,7 +959,10 @@
 
     document.getElementById('detailDonationHistory').innerHTML = (d.donationHistory||[]).map(function(p){
       return '<tr><td class="txt-left">'+fmtDate(p.date)+'</td><td class="txt-left num">'+fmtMoney(p.amount)+'</td><td class="txt-left">'+(p.note||'-')+'</td>' +
-        '<td style="text-align:left;"><button class="btn btn-ghost btn-sm" style="color:var(--bad); border-color:var(--bad-tint);" onclick="removeDonation(\''+p.id+'\')">നീക്കം ചെയ്യുക</button></td></tr>';
+        '<td><div class="row-actions">' +
+          (d.phone ? '<a class="icon-wa" title="രസീത് WhatsApp അയക്കുക" href="javascript:void(0)" onclick="sendWhatsAppDonationReceipt('+JSON.stringify(p).replace(/"/g,'&quot;')+')">🧾</a>' : '') +
+          '<button class="btn btn-ghost btn-sm" style="color:var(--bad); border-color:var(--bad-tint);" onclick="removeDonation(\''+p.id+'\')">നീക്കം ചെയ്യുക</button>' +
+        '</div></td></tr>';
     }).join('') || '<tr><td colspan="4" class="empty">ഇതുവരെ സംഭാവനകൾ ഒന്നും ഇല്ല</td></tr>';
   }
 
@@ -1117,8 +1148,9 @@
     const btn = document.getElementById('apSubmitBtn'); btn.disabled = true;
     callApi('addPayment', { token: SESSION.token, memberId: CURRENT_DETAIL_ID, amount: amount, date: date, note: note, voucherNo: voucherNo, coveredMonths: checked }).then(function(){
       btn.disabled=false; closeModal('modalAddPayment'); toast('വരിസംഖ്യ ചേർത്തു.');
-      LAST_ADDED_PAYMENT = { amount: amount, date: date, voucherNo: voucherNo, coveredMonths: checked.join(',') };
+      LAST_RECEIPT = { kind: 'payment', data: { amount: amount, date: date, voucherNo: voucherNo, coveredMonths: checked.join(',') } };
       openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
+      document.getElementById('receiptPromptText').textContent = 'വരിസംഖ്യ ചേർത്തു കഴിഞ്ഞു. ഈ പേയ്‌മെന്റിന്റെ രസീത് അംഗത്തിന്റെ WhatsApp-ലേക്ക് ഇപ്പോൾ അയക്കണോ?';
       showEl('modalReceiptPrompt');
     }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
   }
@@ -1137,7 +1169,11 @@
     if (!amount || Number(amount) <= 0){ toast('ശരിയായ തുക നൽകുക.', true); return; }
     const btn = document.getElementById('adSubmitBtn'); btn.disabled = true;
     callApi('addDonation', { token: SESSION.token, memberId: CURRENT_DETAIL_ID, amount: amount, date: date, note: note }).then(function(){
-      btn.disabled=false; closeModal('modalAddDonation'); toast('സംഭാവന ചേർത്തു.'); openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
+      btn.disabled=false; closeModal('modalAddDonation'); toast('സംഭാവന ചേർത്തു.');
+      LAST_RECEIPT = { kind: 'donation', data: { amount: amount, date: date, note: note } };
+      openMemberDetail(CURRENT_DETAIL_ID); loadAdminDashboard();
+      document.getElementById('receiptPromptText').textContent = 'സംഭാവന ചേർത്തു കഴിഞ്ഞു. ഇതിന്റെ രസീത് അംഗത്തിന്റെ WhatsApp-ലേക്ക് ഇപ്പോൾ അയക്കണോ?';
+      showEl('modalReceiptPrompt');
     }).catch(function(err){ btn.disabled=false; toast(err.message, true); });
   }
 
@@ -1263,9 +1299,24 @@
       WA_FOOTER_LINK;
     openWaChat(d.phone, text);
   }
+  // ഒരു നിശ്ചിത സംഭാവനയുടെ രസീത് ടെക്സ്റ്റ് ആയി WhatsApp വഴി അയക്കുന്നു
+  function sendWhatsAppDonationReceipt(p){
+    const d = CURRENT_DETAIL_DATA;
+    if (!d){ toast('അംഗത്തിന്റെ വിവരം ലോഡ് ആയില്ല.', true); return; }
+    if (!d.phone){ toast('ഈ അംഗത്തിന് ഫോൺ നമ്പർ രേഖപ്പെടുത്തിയിട്ടില്ല.', true); return; }
+    const text = 'ٱلسَّلَامُ عَلَيْكُمْ ' + d.name + ',\n' +
+      ORG.orgName + ' - നിങ്ങളുടെ സംഭാവനയ്ക്ക് നന്ദി! രസീത്:\n' +
+      'തുക: ' + fmtMoney(p.amount) + '\n' +
+      'തീയതി: ' + fmtDate(p.date) + '\n' +
+      (p.note ? 'ആവശ്യം: ' + p.note + '\n' : '') +
+      '\n' + WA_FOOTER_LINK;
+    openWaChat(d.phone, text);
+  }
   function confirmSendReceipt(){
     closeModal('modalReceiptPrompt');
-    if (LAST_ADDED_PAYMENT) sendWhatsAppReceipt(LAST_ADDED_PAYMENT);
+    if (!LAST_RECEIPT) return;
+    if (LAST_RECEIPT.kind === 'donation') sendWhatsAppDonationReceipt(LAST_RECEIPT.data);
+    else sendWhatsAppReceipt(LAST_RECEIPT.data);
   }
 
   // =================================================================
